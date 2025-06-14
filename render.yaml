@@ -9,10 +9,12 @@ services:
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
-      - key: DEBUG
-        value: "false"
       - key: SERVE_FRONTEND
-        value: "false"
+        value: false
+      - key: DEBUG
+        value: false
       - key: CORS_ALLOWED_ORIGINS
         value: "*"
-    healthCheckPath: /api/health
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health

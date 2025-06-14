@@ -14,7 +14,7 @@ Backend API untuk aplikasi OpenHands yang mendukung AI assistant dengan berbagai
    - Connect repository Anda
    - Environment: `Python`
    - Build Command: `pip install -r requirements.txt`
-   - Start Command: `python -m openhands.server`
+   - Start Command: `python app.py`
 
 3. **Set Environment Variables:**
    ```
