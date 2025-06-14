@@ -16,6 +16,19 @@ if os.getenv('SERVE_FRONTEND', 'true').lower() == 'true':
     base_app.mount(
         '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
     )
+else:
+    # Add root endpoint for backend-only deployment
+    @base_app.get('/')
+    async def root():
+        return {
+            'message': 'OpenHands Backend API',
+            'status': 'running',
+            'endpoints': {
+                'health': '/health',
+                'docs': '/docs',
+                'api_docs': '/redoc'
+            }
+        }
 
 base_app.add_middleware(LocalhostCORSMiddleware)
 base_app.add_middleware(CacheControlMiddleware)
