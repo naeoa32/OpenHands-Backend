@@ -20,11 +20,14 @@ class LocalhostCORSMiddleware(CORSMiddleware):
     """
 
     def __init__(self, app: ASGIApp) -> None:
-        allow_origins_str = os.getenv('PERMITTED_CORS_ORIGINS')
+        allow_origins_str = os.getenv('PERMITTED_CORS_ORIGINS') or os.getenv('CORS_ALLOWED_ORIGINS')
         if allow_origins_str:
-            allow_origins = tuple(
-                origin.strip() for origin in allow_origins_str.split(',')
-            )
+            if allow_origins_str == "*":
+                allow_origins = ["*"]
+            else:
+                allow_origins = tuple(
+                    origin.strip() for origin in allow_origins_str.split(',')
+                )
         else:
             allow_origins = ()
         super().__init__(
