@@ -357,6 +357,8 @@ class Session:
 
     async def _handle_novel_writing_mode(self, event: MessageAction) -> None:
         """Handle Novel Writing Mode with specialized configuration and prompts."""
+        original_llm_config = None
+        
         try:
             # Send status update that we're entering novel writing mode
             await self.send({
@@ -390,19 +392,36 @@ class Session:
             # Get current controller and LLM config
             controller = self.agent_session.controller
             if not controller:
-                await self.send_error('Agent controller tidak tersedia untuk Novel Writing Mode')
-                return
+                raise ValueError('Agent controller tidak tersedia untuk Novel Writing Mode')
 
-            # Create novel writing optimized LLM config
-            current_llm_config = controller.agent.llm.config
+            # Store original config for restoration
+            original_llm_config = controller.agent.llm.config
+            
+            # Create novel writing optimized LLM config with proper secret handling
+            api_key = None
+            if original_llm_config.api_key:
+                try:
+                    api_key = original_llm_config.api_key.get_secret_value()
+                except Exception as e:
+                    self.logger.warning(f'Could not retrieve API key: {e}')
+                    api_key = None
+
             novel_llm_config = create_novel_writing_llm_config(
-                current_llm_config,
+                original_llm_config,
                 is_premium=use_premium,
-                api_key=current_llm_config.api_key.get_secret_value() if current_llm_config.api_key else None
+                api_key=api_key
             )
 
-            # Update the LLM config for this session
-            controller.agent.llm.config = novel_llm_config
+            # Create new LLM instance instead of modifying existing one for session isolation
+            from openhands.llm.llm import LLM
+            novel_llm = LLM(
+                config=novel_llm_config,
+                retry_listener=self._notify_on_llm_retry,
+            )
+            
+            # Temporarily replace the LLM instance
+            original_llm = controller.agent.llm
+            controller.agent.llm = novel_llm
 
             # Create a system message with the novel writing prompt
             from openhands.events.action.message import SystemMessageAction
@@ -422,8 +441,14 @@ class Session:
                 'message': 'Novel Writing Mode siap! AI akan bertanya detail spesifik untuk membantu penulisan Anda.'
             })
 
+        except ValueError as e:
+            # Specific error handling for known issues
+            self.logger.error(f'Novel Writing Mode configuration error: {e}')
+            await self.send_error(f'Konfigurasi Novel Writing Mode gagal: {str(e)}')
+            self.agent_session.event_stream.add_event(event, EventSource.USER)
+            
         except Exception as e:
-            self.logger.error(f'Error in novel writing mode: {e}')
-            await self.send_error(f'Gagal mengaktifkan Novel Writing Mode: {str(e)}')
-            # Fallback to regular mode
+            # General error handling with proper logging
+            self.logger.error(f'Unexpected error in novel writing mode: {e}', exc_info=True)
+            await self.send_error('Terjadi kesalahan sistem. Menggunakan mode regular.')
             self.agent_session.event_stream.add_event(event, EventSource.USER)
