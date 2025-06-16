@@ -78,10 +78,12 @@ def test_novel_writing_config():
     """Test novel writing configuration"""
     print("\n🧪 Testing novel writing configuration...")
     
-    # Create base config
+    from pydantic import SecretStr
+    
+    # Create base config with SecretStr for security testing
     base_config = LLMConfig(
         model="claude-3-haiku-20240307",
-        api_key="test-key",
+        api_key=SecretStr("test-key"),
         temperature=0.0
     )
     
@@ -91,20 +93,36 @@ def test_novel_writing_config():
     print(f"   - model: {budget_config.model}")
     print(f"   - temperature: {budget_config.temperature}")
     print(f"   - max_output_tokens: {budget_config.max_output_tokens}")
+    print(f"   - api_key type: {type(budget_config.api_key).__name__}")
     
     # Test premium config
     premium_config = create_novel_writing_llm_config(base_config, is_premium=True)
     print(f"✅ Premium config created:")
     print(f"   - model: {premium_config.model}")
     print(f"   - temperature: {premium_config.temperature}")
+    print(f"   - api_key secured: {budget_config.api_key is not None}")
     
-    # Test model selection logic
+    # Test model selection logic with configurable thresholds
     use_premium_simple = should_use_premium_model("character-development", 500)
-    use_premium_complex = should_use_premium_model("theme-symbolism", 1500)
+    use_premium_complex = should_use_premium_model("theme-symbolism", 2000)
     
     print(f"✅ Model selection logic:")
     print(f"   - Simple template, short content: {'Premium' if use_premium_simple else 'Budget'}")
     print(f"   - Complex template, long content: {'Premium' if use_premium_complex else 'Budget'}")
+    
+    # Test configurable thresholds
+    import os
+    original_threshold = os.environ.get('NOVEL_PREMIUM_CONTENT_THRESHOLD')
+    os.environ['NOVEL_PREMIUM_CONTENT_THRESHOLD'] = '800'
+    
+    use_premium_with_lower_threshold = should_use_premium_model("character-development", 1000)
+    print(f"   - With lower threshold (800): {'Premium' if use_premium_with_lower_threshold else 'Budget'}")
+    
+    # Restore original threshold
+    if original_threshold:
+        os.environ['NOVEL_PREMIUM_CONTENT_THRESHOLD'] = original_threshold
+    else:
+        os.environ.pop('NOVEL_PREMIUM_CONTENT_THRESHOLD', None)
     
     # Test model info
     budget_info = get_novel_writing_model_info(False)
@@ -113,6 +131,15 @@ def test_novel_writing_config():
     print(f"✅ Model info retrieved:")
     print(f"   - Budget: {budget_info['name']} ({budget_info['tier']})")
     print(f"   - Premium: {premium_info['name']} ({premium_info['tier']})")
+    
+    # Test API key security
+    try:
+        # This should work
+        secret_value = budget_config.api_key.get_secret_value()
+        print(f"✅ API key security: SecretStr properly implemented")
+    except Exception as e:
+        print(f"❌ API key security issue: {e}")
+        return False
     
     return True
 

@@ -34,11 +34,14 @@ def create_novel_writing_llm_config(
     Args:
         base_config: Base LLM configuration
         is_premium: Whether to use premium model (Claude Opus) or budget model (Claude Haiku)
-        api_key: OpenRouter API key
+        api_key: OpenRouter API key (will be handled as SecretStr)
     
     Returns:
         LLMConfig optimized for creative writing
     """
+    from pydantic import SecretStr
+    import os
+    
     novel_config = NovelWritingConfig()
     
     # Create a copy of base config
@@ -54,13 +57,21 @@ def create_novel_writing_llm_config(
         "openrouter_app_name": novel_config.openrouter_app_name,
     })
     
-    # Set API key if provided
+    # Handle API key as SecretStr for security
     if api_key:
-        config_dict["api_key"] = api_key
+        config_dict["api_key"] = SecretStr(api_key)
+    elif not config_dict.get("api_key"):
+        # Fallback to environment variable
+        env_api_key = os.environ.get('OPENROUTER_API_KEY') or os.environ.get('LLM_API_KEY')
+        if env_api_key:
+            config_dict["api_key"] = SecretStr(env_api_key)
     
     # Ensure we're using OpenRouter
     if not config_dict.get("base_url"):
         config_dict["base_url"] = "https://openrouter.ai/api/v1"
+    
+    # Remove any None values to avoid validation errors
+    config_dict = {k: v for k, v in config_dict.items() if v is not None}
     
     return LLMConfig(**config_dict)
 
@@ -108,15 +119,37 @@ def should_use_premium_model(template_used: str | None = None, content_length: i
     Returns:
         Boolean indicating whether to use premium model
     """
-    # Use premium model for complex templates
-    premium_templates = ["theme-symbolism", "style-voice", "editing-revision"]
+    import os
     
-    # Use premium model for longer content (more than 1000 characters)
-    if content_length > 1000:
+    # Get configurable thresholds from environment variables
+    content_threshold = int(os.environ.get('NOVEL_PREMIUM_CONTENT_THRESHOLD', '1500'))
+    
+    # Define template complexity levels
+    template_complexity = {
+        'character-development': 1,
+        'dialogue-writing': 1,
+        'plot-structure': 2,
+        'world-building': 2,
+        'style-voice': 3,
+        'theme-symbolism': 3,
+        'editing-revision': 3,
+    }
+    
+    # Get premium template threshold from environment
+    premium_complexity_threshold = int(os.environ.get('NOVEL_PREMIUM_COMPLEXITY_THRESHOLD', '3'))
+    
+    # Check content length threshold
+    if content_length > content_threshold:
         return True
         
-    # Use premium model for complex templates
-    if template_used in premium_templates:
+    # Check template complexity
+    if template_used and template_used in template_complexity:
+        complexity = template_complexity[template_used]
+        if complexity >= premium_complexity_threshold:
+            return True
+    
+    # Force premium mode if environment variable is set
+    if os.environ.get('NOVEL_FORCE_PREMIUM_MODE', '').lower() == 'true':
         return True
         
     return False
