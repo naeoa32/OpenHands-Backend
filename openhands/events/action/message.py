@@ -13,6 +13,10 @@ class MessageAction(Action):
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
     security_risk: ActionSecurityRisk | None = None
+    # Novel Writing Mode fields
+    novel_mode: bool = False
+    original_prompt: str | None = None
+    template_used: str | None = None
 
     @property
     def message(self) -> str:
