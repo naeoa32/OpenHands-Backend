@@ -72,6 +72,9 @@ from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
+# Public router for endpoints that don't require authentication
+public_app = APIRouter(prefix='/api')
+
 
 class InitSessionRequest(BaseModel):
     repository: str | None = None
@@ -531,3 +534,83 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
     all_events = itertools.chain(ordered_context_before, context_after)
     stringified_events = '\n'.join(str(event) for event in all_events)
     return stringified_events
+
+
+# Public endpoint for creating conversations without authentication
+@public_app.options('/conversations')
+async def conversations_options():
+    """Handle OPTIONS request for CORS"""
+    return {"message": "OK"}
+
+@public_app.post('/conversations')
+async def new_conversation_public(
+    data: InitSessionRequest,
+) -> ConversationResponse:
+    """Initialize a new session without authentication.
+    
+    This is a public endpoint that allows creating conversations without API key.
+    """
+    logger.info(f'initializing_new_conversation_public:{data}')
+    
+    # Use default values for authentication-dependent parameters
+    user_id = "anonymous"
+    provider_tokens = None
+    user_secrets = None
+    auth_type = None
+    
+    repository = data.repository
+    selected_branch = data.selected_branch
+    initial_user_msg = data.initial_user_msg
+    image_urls = data.image_urls or []
+    replay_json = data.replay_json
+    suggested_task = data.suggested_task
+    git_provider = data.git_provider
+    conversation_instructions = data.conversation_instructions
+
+    conversation_trigger = ConversationTrigger.GUI
+
+    if suggested_task:
+        initial_user_msg = suggested_task.get_prompt_for_task()
+        conversation_trigger = ConversationTrigger.SUGGESTED_TASK
+
+    try:
+        # Skip repository validation for public endpoint
+        if repository and provider_tokens:
+            provider_handler = ProviderHandler(provider_tokens)
+            # Check against git_provider, otherwise check all provider apis
+            if git_provider:
+                provider_handler.check_provider_api(git_provider)
+            else:
+                provider_handler.check_all_provider_apis()
+
+        conversation_id = uuid.uuid4().hex
+        
+        # Create conversation with minimal settings
+        conversation = await create_new_conversation(
+            user_id=user_id,
+            git_provider_tokens=provider_tokens,
+            custom_secrets=user_secrets,
+            selected_repository=repository,
+            selected_branch=selected_branch,
+            initial_user_msg=initial_user_msg,
+            image_urls=image_urls,
+            replay_json=replay_json,
+            conversation_trigger=conversation_trigger,
+            conversation_instructions=conversation_instructions,
+            conversation_id=conversation_id,
+        )
+
+        return ConversationResponse(
+            conversation_id=conversation_id,
+            status='success',
+        )
+
+    except Exception as e:
+        logger.error(f'Error creating public conversation: {e}')
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+            },
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
