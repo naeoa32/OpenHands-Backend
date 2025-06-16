@@ -69,8 +69,32 @@ async def create_new_conversation(
             )
 
     else:
-        logger.warning('Settings not present, not starting conversation')
-        raise MissingSettingsError('Settings not found')
+        # For anonymous users or when settings are not found, create default settings
+        logger.info('Settings not present, creating default settings for anonymous user')
+        from openhands.storage.data_models.settings import Settings
+        from pydantic import SecretStr
+        import os
+        
+        # Create default settings using environment variables
+        # For anonymous users, use a mock API key if none is provided
+        api_key = os.getenv('LLM_API_KEY') or os.getenv('OPENROUTER_API_KEY') or 'mock-api-key-for-testing'
+        
+        default_settings = Settings(
+            language='en',
+            agent=os.getenv('DEFAULT_AGENT', 'CodeActAgent'),
+            max_iterations=100,
+            llm_model=os.getenv('LLM_MODEL', 'openrouter/anthropic/claude-3-haiku-20240307'),
+            llm_api_key=SecretStr(api_key),
+            llm_base_url=os.getenv('LLM_BASE_URL', 'https://openrouter.ai/api/v1'),
+            confirmation_mode=False,
+            enable_default_condenser=True,
+            enable_sound_notifications=False,
+            enable_proactive_conversation_starters=True,
+        )
+        
+        logger.info(f'Using default settings for anonymous user with model: {default_settings.llm_model}')
+        
+        session_init_args = {**default_settings.__dict__, **session_init_args}
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
     session_init_args['selected_repository'] = selected_repository
