@@ -32,6 +32,12 @@ from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.core.novel_writing_prompts import create_novel_writing_prompt
+from openhands.core.novel_writing_config import (
+    create_novel_writing_llm_config, 
+    should_use_premium_model,
+    get_novel_writing_model_info
+)
 
 ROOM_KEY = 'room:{sid}'
 
@@ -282,6 +288,12 @@ class Session:
 
     async def dispatch(self, data: dict) -> None:
         event = event_from_dict(data.copy())
+        
+        # Handle Novel Writing Mode
+        if isinstance(event, MessageAction) and event.novel_mode:
+            await self._handle_novel_writing_mode(event)
+            return
+            
         # This checks if the model supports images
         if isinstance(event, MessageAction) and event.image_urls:
             controller = self.agent_session.controller
@@ -342,3 +354,76 @@ class Session:
         asyncio.run_coroutine_threadsafe(
             self._send_status_message(msg_type, id, message), self.loop
         )
+
+    async def _handle_novel_writing_mode(self, event: MessageAction) -> None:
+        """Handle Novel Writing Mode with specialized configuration and prompts."""
+        try:
+            # Send status update that we're entering novel writing mode
+            await self.send({
+                'status_update': True,
+                'type': 'info',
+                'id': 'NOVEL_MODE_ACTIVATED',
+                'message': f'Novel Writing Mode diaktifkan dengan template: {event.template_used or "default"}'
+            })
+
+            # Determine if we should use premium model
+            use_premium = should_use_premium_model(
+                event.template_used, 
+                len(event.content) if event.content else 0
+            )
+
+            # Get model info for user feedback
+            model_info = get_novel_writing_model_info(use_premium)
+            await self.send({
+                'status_update': True,
+                'type': 'info', 
+                'id': 'NOVEL_MODEL_SELECTED',
+                'message': f'Menggunakan {model_info["name"]} ({model_info["tier"]}) untuk kualitas penulisan optimal'
+            })
+
+            # Create novel writing system prompt
+            system_prompt = create_novel_writing_prompt(
+                event.template_used,
+                event.original_prompt
+            )
+
+            # Get current controller and LLM config
+            controller = self.agent_session.controller
+            if not controller:
+                await self.send_error('Agent controller tidak tersedia untuk Novel Writing Mode')
+                return
+
+            # Create novel writing optimized LLM config
+            current_llm_config = controller.agent.llm.config
+            novel_llm_config = create_novel_writing_llm_config(
+                current_llm_config,
+                is_premium=use_premium,
+                api_key=current_llm_config.api_key.get_secret_value() if current_llm_config.api_key else None
+            )
+
+            # Update the LLM config for this session
+            controller.agent.llm.config = novel_llm_config
+
+            # Create a system message with the novel writing prompt
+            from openhands.events.action.message import SystemMessageAction
+            system_message = SystemMessageAction(content=system_prompt)
+            
+            # Add system message to event stream
+            self.agent_session.event_stream.add_event(system_message, EventSource.ENVIRONMENT)
+
+            # Now add the user's message
+            self.agent_session.event_stream.add_event(event, EventSource.USER)
+
+            # Send confirmation
+            await self.send({
+                'status_update': True,
+                'type': 'success',
+                'id': 'NOVEL_MODE_READY',
+                'message': 'Novel Writing Mode siap! AI akan bertanya detail spesifik untuk membantu penulisan Anda.'
+            })
+
+        except Exception as e:
+            self.logger.error(f'Error in novel writing mode: {e}')
+            await self.send_error(f'Gagal mengaktifkan Novel Writing Mode: {str(e)}')
+            # Fallback to regular mode
+            self.agent_session.event_stream.add_event(event, EventSource.USER)
