@@ -8,7 +8,8 @@ from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import config, server_config
 from openhands.utils.llm import get_supported_llm_models
 
-app = APIRouter(prefix='/api/options', dependencies=get_dependencies())
+# Create router without authentication dependencies for public endpoints
+app = APIRouter(prefix='/api/options')
 
 
 @app.get('/models', response_model=list[str])
