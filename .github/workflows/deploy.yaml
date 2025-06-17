@@ -1,9 +1,10 @@
-name: deploy
+name: Mirror GitHub Repo to HF Space
 
 on:
   push:
     branches:
-      - main  # Ubah ke nama branch kamu kalau bukan 'main'
+      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -12,27 +13,19 @@ jobs:
       - name: Checkout GitHub Repository
         uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Install Git LFS
+        run: |
+          sudo apt-get update
+          sudo apt-get install git-lfs
+          git lfs install
+
+      - name: Sync only /openhands folder to Hugging Face
+        run: |
+          rsync -av --delete ./openhands/ ./repo/
+
+      - name: Push to Hugging Face
+        uses: huggingface/huggingface_hub_action@v0.1
         with:
-          python-version: "3.10"
-
-      - name: Install dependencies
-        run: |
-          pip install huggingface_hub
-
-      - name: Clone Hugging Face Space
-        run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "GitHub Actions"
-          git clone https://Minatoz997:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Minatoz997/Backend66 hf_space
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-
-      - name: Push to Hugging Face Space (Full Sync)
-        run: |
-          rsync -av --delete --exclude='.git/' ./ hf_space/
-          cd hf_space
-          git add .
-          git commit -m "Sync from GitHub"
-          git push || echo "No changes to commit"
+          repo_id: Minatoz997/Backend66
+          repo_type: space
+          token: ${{ secrets.HF_TOKEN }}
