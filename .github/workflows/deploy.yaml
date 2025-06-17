@@ -1,33 +1,38 @@
-name: Auto Mirror GitHub Repo to Hugging Face Space (Preserve Structure)
+name: deploy
 
 on:
   push:
     branches:
-      - main  # ganti kalau kamu pakai branch lain
+      - main  # Ubah ke nama branch kamu kalau bukan 'main'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout GitHub Repository
         uses: actions/checkout@v3
 
-      - name: Mirror GitHub Repo to HF Space (Full Sync)
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
         run: |
-          git config --global user.email "github-actions@github.com"
+          pip install huggingface_hub
+
+      - name: Clone Hugging Face Space
+        run: |
+          git config --global user.email "you@example.com"
           git config --global user.name "GitHub Actions"
-
-          # Clone Hugging Face Space repo
-          git clone https://Minatoz997:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Minatoz997/Backend66 hf-space
-
-          # Sync all files (preserve folder structure)
-          rsync -av --delete --exclude='.git' ./ hf-space/
-
-          # Commit & push to HF
-          cd hf-space
-          git add .
-          git commit -m "Auto sync from GitHub main to Hugging Face Space"
-          git push
+          git clone https://Minatoz997:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Minatoz997/Backend66 hf_space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+
+      - name: Push to Hugging Face Space (Full Sync)
+        run: |
+          rsync -av --delete --exclude='.git/' ./ hf_space/
+          cd hf_space
+          git add .
+          git commit -m "Sync from GitHub"
+          git push || echo "No changes to commit"
