@@ -1,36 +1,33 @@
-name: Auto Deploy to Hugging Face Space (Inside /openhands)
+name: Auto Mirror GitHub Repo to Hugging Face Space (Preserve Structure)
 
 on:
   push:
     branches:
-      - main  # Ganti kalau kamu pakai nama branch lain
+      - main  # ganti kalau kamu pakai branch lain
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout GitHub Repo
+      - name: Checkout GitHub Repository
         uses: actions/checkout@v3
 
-      - name: Push to Hugging Face Space (into /openhands folder)
+      - name: Mirror GitHub Repo to HF Space (Full Sync)
         run: |
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
 
-          # Clone Space
-          git clone https://Minatoz997:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Minatoz997/Backend66 space
+          # Clone Hugging Face Space repo
+          git clone https://Minatoz997:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Minatoz997/Backend66 hf-space
 
-          # Buat folder openhands kalau belum ada
-          mkdir -p space/openhands
+          # Sync all files (preserve folder structure)
+          rsync -av --delete --exclude='.git' ./ hf-space/
 
-          # Sync isi repo GitHub ke folder /openhands di Space (abaikan error kecil)
-          rsync -av --exclude='.git' --delete ./ space/openhands/ || true
-
-          # Commit & push
-          cd space
+          # Commit & push to HF
+          cd hf-space
           git add .
-          git commit -m "Auto deploy GitHub repo to HF Space inside /openhands"
+          git commit -m "Auto sync from GitHub main to Hugging Face Space"
           git push
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
