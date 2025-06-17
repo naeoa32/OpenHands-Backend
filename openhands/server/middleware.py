@@ -46,6 +46,18 @@ class LocalhostCORSMiddleware(CORSMiddleware):
             # Allow any localhost/127.0.0.1 origin regardless of port
             if hostname in ['localhost', '127.0.0.1']:
                 return True
+            
+            # Allow Vercel deployment domains
+            if hostname.endswith('.vercel.app') or hostname.endswith('.vercel.com'):
+                return True
+            
+            # Allow Netlify deployment domains
+            if hostname.endswith('.netlify.app') or hostname.endswith('.netlify.com'):
+                return True
+            
+            # Allow common frontend development domains
+            if hostname.endswith('.ngrok.io') or hostname.endswith('.github.io'):
+                return True
 
         # For missing origin or other origins, use the parent class's logic
         result: bool = super().is_allowed_origin(origin)
