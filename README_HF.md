@@ -23,6 +23,10 @@ LLM_BASE_URL=https://openrouter.ai/api/v1
 SESSION_API_KEY=your_session_key
 OPENHANDS_RUNTIME=local
 DEBUG=false
+
+# File Storage (automatically configured)
+FILE_STORE_PATH=/tmp/openhands
+CACHE_DIR=/tmp/cache
 ```
 
 ## API Endpoints
