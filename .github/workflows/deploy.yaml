@@ -1,9 +1,9 @@
-name: Auto Deploy to Hugging Face Space (Inside Folder)
+name: Auto Deploy to Hugging Face Space (Inside /openhands)
 
 on:
   push:
     branches:
-      - main  # Ganti kalau bukan pakai main
+      - main  # Ganti kalau kamu pakai nama branch lain
 
 jobs:
   deploy:
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout GitHub Repo
         uses: actions/checkout@v3
 
-      - name: Push to Hugging Face Space (inside /openhands)
+      - name: Push to Hugging Face Space (into /openhands folder)
         run: |
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions"
@@ -21,14 +21,16 @@ jobs:
           # Clone Space
           git clone https://Minatoz997:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Minatoz997/Backend66 space
 
-          # Copy seluruh isi repo GitHub ke dalam folder 'openhands' di Space
+          # Buat folder openhands kalau belum ada
           mkdir -p space/openhands
-          rsync -av --exclude='.git' --delete ./ space/openhands/
 
-          # Commit dan Push ke Space
+          # Sync isi repo GitHub ke folder /openhands di Space (abaikan error kecil)
+          rsync -av --exclude='.git' --delete ./ space/openhands/ || true
+
+          # Commit & push
           cd space
           git add .
-          git commit -m "Auto deploy GitHub > HF: into /openhands"
+          git commit -m "Auto deploy GitHub repo to HF Space inside /openhands"
           git push
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
