@@ -55,6 +55,8 @@ DEBUG=false
 - `OPENHANDS_RUNTIME=local` (no Docker in container)
 - `CORS_ALLOWED_ORIGINS=*` (allows all frontends)
 - `PORT=7860` (HF Spaces standard)
+- `FILE_STORE_PATH=/tmp/openhands` (writable directory for file storage)
+- `CACHE_DIR=/tmp/cache` (writable directory for caching)
 
 ## 🌐 Frontend Integration
 
