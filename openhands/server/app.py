@@ -10,7 +10,15 @@ with warnings.catch_warnings():
 
 from fastapi import (
     FastAPI,
+    Request,
+    HTTPException,
 )
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+import logging
+
+logger = logging.getLogger(__name__)
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
@@ -67,6 +75,81 @@ app = FastAPI(
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Add root endpoint
+@app.get("/")
+async def root():
+    """Root endpoint providing API information."""
+    return JSONResponse({
+        "name": "OpenHands Backend API",
+        "version": __version__,
+        "description": "OpenHands: Code Less, Make More",
+        "status": "running",
+        "endpoints": {
+            "health": "/health",
+            "api_config": "/api/options/config",
+            "api_models": "/api/options/models",
+            "api_agents": "/api/options/agents",
+            "conversations": "/api/conversations",
+            "hf_status": "/api/hf/status",
+            "hf_ready": "/api/hf/ready",
+            "hf_environment": "/api/hf/environment"
+        },
+        "documentation": "/docs",
+        "openapi": "/openapi.json"
+    })
+
+# Add global exception handlers
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc: HTTPException):
+    """Handle 404 errors with helpful information."""
+    return JSONResponse(
+        status_code=404,
+        content={
+            "detail": f"Endpoint not found: {request.url.path}",
+            "message": "The requested endpoint does not exist",
+            "available_endpoints": {
+                "root": "/",
+                "health": "/health",
+                "docs": "/docs",
+                "api_config": "/api/options/config",
+                "hf_status": "/api/hf/status"
+            }
+        }
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors."""
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Validation error",
+            "errors": exc.errors(),
+            "body": exc.body
+        }
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """Handle general exceptions."""
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal server error",
+            "message": "An unexpected error occurred",
+            "type": type(exc).__name__
+        }
+    )
 
 app.include_router(public_api_router)
 app.include_router(public_conversation_api_router)  # Public conversations endpoint

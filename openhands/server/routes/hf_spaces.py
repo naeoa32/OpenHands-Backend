@@ -2,9 +2,29 @@
 HF Spaces specific routes for debugging and status checking.
 """
 import os
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/api/hf", tags=["hf-spaces"])
+
+# Add a catch-all route for missing endpoints
+@router.get("/logs-container")
+async def logs_container():
+    """Handle logs-container requests that might be coming from HF Spaces UI."""
+    return JSONResponse({
+        "message": "Logs endpoint not implemented",
+        "status": "info",
+        "logs": []
+    })
+
+@router.get("/logs")
+async def logs():
+    """Handle logs requests."""
+    return JSONResponse({
+        "message": "Logs endpoint",
+        "status": "info", 
+        "logs": []
+    })
 
 
 @router.get("/status")
