@@ -1,0 +1,120 @@
+name: Deploy to HuggingFace Spaces
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [closed]
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        lfs: true
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install huggingface_hub
+
+    - name: Deploy to HuggingFace Spaces
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_USERNAME: Minatoz997
+        HF_SPACE_NAME: Backend66
+      run: |
+        python << 'EOF'
+        import os
+        from huggingface_hub import HfApi, upload_folder
+        
+        # Initialize HF API
+        api = HfApi(token=os.environ['HF_TOKEN'])
+        
+        # Upload entire repository to HF Spaces
+        try:
+            api.upload_folder(
+                folder_path=".",
+                repo_id=f"{os.environ['HF_USERNAME']}/{os.environ['HF_SPACE_NAME']}",
+                repo_type="space",
+                ignore_patterns=[".git", ".github", "__pycache__", "*.pyc", ".env"],
+                commit_message="🚀 Auto-deploy: Complete OpenRouter + Novel Writing Integration"
+            )
+            print("✅ Successfully deployed to HuggingFace Spaces!")
+        except Exception as e:
+            print(f"❌ Deployment failed: {e}")
+            exit(1)
+        EOF
+
+    - name: Restart HuggingFace Space
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_USERNAME: Minatoz997
+        HF_SPACE_NAME: Backend66
+      run: |
+        python << 'EOF'
+        import os
+        import requests
+        
+        # Restart the space
+        try:
+            response = requests.post(
+                f"https://huggingface.co/api/spaces/{os.environ['HF_USERNAME']}/{os.environ['HF_SPACE_NAME']}/restart",
+                headers={"Authorization": f"Bearer {os.environ['HF_TOKEN']}"}
+            )
+            if response.status_code == 200:
+                print("✅ Space restarted successfully!")
+            else:
+                print(f"⚠️ Restart response: {response.status_code}")
+        except Exception as e:
+            print(f"⚠️ Restart failed: {e}")
+        EOF
+
+    - name: Wait for deployment
+      run: |
+        echo "🕐 Waiting for space to be ready..."
+        sleep 30
+        
+    - name: Test deployment
+      env:
+        HF_USERNAME: Minatoz997
+        HF_SPACE_NAME: Backend66
+      run: |
+        python << 'EOF'
+        import requests
+        import time
+        
+        space_url = f"https://{os.environ['HF_USERNAME']}-{os.environ['HF_SPACE_NAME']}.hf.space"
+        
+        # Test endpoints
+        endpoints_to_test = [
+            "/",
+            "/health", 
+            "/novel/health",
+            "/chat/health"
+        ]
+        
+        print(f"🧪 Testing deployment at: {space_url}")
+        
+        for endpoint in endpoints_to_test:
+            try:
+                response = requests.get(f"{space_url}{endpoint}", timeout=10)
+                status = "✅" if response.status_code == 200 else "❌"
+                print(f"{status} {endpoint} - Status: {response.status_code}")
+            except Exception as e:
+                print(f"❌ {endpoint} - Error: {e}")
+        
+        print("🎉 Deployment test completed!")
+        EOF
