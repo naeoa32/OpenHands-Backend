@@ -95,8 +95,12 @@ charset-normalizer
 certifi
 idna
 
-# ===== EXCLUDED (Problematic for HF Spaces) =====
-# docker - Not needed in containerized environment
+# ===== RUNTIME CONFIGURATION FOR HF SPACES =====
+# Using E2B Runtime instead of Docker for cloud deployment
+# E2B provides secure cloud-based code execution environment
+
+# ===== EXCLUDED (Not suitable for HF Spaces) =====
+# docker - HF Spaces doesn't support Docker-in-Docker
 # pythonnet - Windows-specific, causes build issues  
 # modal - External cloud service, heavy dependency
 # daytona-sdk - Not essential for core functionality
@@ -108,3 +112,9 @@ idna
 # stripe - Payment processing, not needed
 # runloop-api-client - External service
 # openhands-aci - Azure specific, not needed
+
+# NOTE: For HF Spaces deployment, we use E2B Runtime instead of Docker:
+# - E2B provides secure cloud-based code execution
+# - No need for Docker daemon in HF Spaces container
+# - Better suited for serverless/cloud deployments
+# - Requires E2B_API_KEY environment variable

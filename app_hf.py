@@ -21,7 +21,7 @@ def setup_hf_environment():
     # Core HF Spaces configuration
     os.environ.setdefault("PORT", "7860")
     os.environ.setdefault("HOST", "0.0.0.0")
-    os.environ.setdefault("OPENHANDS_RUNTIME", "local")
+    os.environ.setdefault("OPENHANDS_RUNTIME", "e2b")  # Use E2B for cloud execution
     os.environ.setdefault("CORS_ALLOWED_ORIGINS", "*")
     
     # Use memory-based storage to avoid file permission issues
@@ -47,8 +47,16 @@ def setup_hf_environment():
     
     # LLM configuration - use OpenRouter by default
     if not os.getenv("LLM_API_KEY"):
-        os.environ.setdefault("LLM_MODEL", "openrouter/anthropic/claude-3-haiku-20240307")
-        os.environ.setdefault("LLM_BASE_URL", "https://openrouter.ai/api/v1")
+        logger.warning("⚠️  LLM_API_KEY not set. Please set it in HF Spaces environment variables.")
+    os.environ.setdefault("LLM_MODEL", "openrouter/anthropic/claude-3-haiku-20240307")
+    os.environ.setdefault("LLM_BASE_URL", "https://openrouter.ai/api/v1")
+    
+    # E2B Runtime configuration for cloud code execution
+    if not os.getenv("E2B_API_KEY"):
+        logger.warning("⚠️  E2B_API_KEY not set. Code execution will be limited.")
+        logger.info("💡 Get your E2B API key from: https://e2b.dev/docs")
+        # Fallback to local runtime if E2B not available
+        os.environ["OPENHANDS_RUNTIME"] = "local"
     
     # Create directories if they don't exist
     directories = ["/tmp/openhands", "/tmp/cache", "/tmp/workspace", "/tmp/file_store"]

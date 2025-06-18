@@ -24,6 +24,10 @@ LLM_API_KEY=your_openrouter_api_key_here
 LLM_MODEL=openrouter/anthropic/claude-3-haiku-20240307
 LLM_BASE_URL=https://openrouter.ai/api/v1
 
+# ===== Runtime Configuration =====
+OPENHANDS_RUNTIME=e2b
+E2B_API_KEY=your_e2b_api_key_here
+
 # ===== Server Configuration =====
 PORT=7860
 HOST=0.0.0.0
@@ -45,7 +49,6 @@ RATE_LIMIT=60
 # GITHUB_TOKEN=your_github_token
 # OPENAI_API_KEY=your_openai_key
 # ANTHROPIC_API_KEY=your_anthropic_key
-# E2B_API_KEY=your_e2b_key
 
 # ===== Monitoring =====
 ENABLE_TELEMETRY=false
