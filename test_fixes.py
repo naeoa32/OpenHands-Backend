@@ -48,6 +48,10 @@ def test_endpoints():
         "/openrouter/health",
         "/test-chat/",
         "/test-chat/health",
+        "/memory-chat/",
+        "/memory-chat/health",
+        "/chat/",
+        "/chat/health",
         "/docs",
         "/openapi.json"
     ]
@@ -123,6 +127,41 @@ def test_endpoints():
             print(f"   Expected: {data.get('message', 'API key required')}")
     except Exception as e:
         print(f"❌ POST /openrouter/test failed: {e}")
+    
+    # Test memory chat endpoint (no file dependencies)
+    try:
+        test_data = {
+            "message": "Hello from memory chat test!",
+            "model": "openai/gpt-4o-mini"
+        }
+        response = requests.post(f"{base_url}/memory-chat/message", json=test_data, timeout=10)
+        status = "✅" if response.status_code == 200 else "❌"
+        print(f"{status} POST /memory-chat/message - Status: {response.status_code}")
+        if response.status_code == 200:
+            data = response.json()
+            print(f"   Memory chat ID: {data.get('conversation_id', 'None')}")
+            print(f"   Response: {data.get('response', 'None')}")
+    except Exception as e:
+        print(f"❌ POST /memory-chat/message failed: {e}")
+    
+    # Test real OpenRouter chat endpoint (without API key for now)
+    try:
+        test_data = {
+            "message": "Hello! This is a test of the real OpenRouter chat.",
+            "model": "openai/gpt-4o-mini"
+        }
+        response = requests.post(f"{base_url}/chat/message", json=test_data, timeout=10)
+        status = "✅" if response.status_code in [200, 400] else "❌"  # 400 expected without API key
+        print(f"{status} POST /chat/message - Status: {response.status_code}")
+        if response.status_code == 200:
+            data = response.json()
+            print(f"   Real chat ID: {data.get('conversation_id', 'None')}")
+            print(f"   AI Response: {data.get('response', 'None')[:100]}...")
+        elif response.status_code == 400:
+            data = response.json()
+            print(f"   Expected: {data.get('message', 'API key required')}")
+    except Exception as e:
+        print(f"❌ POST /chat/message failed: {e}")
     
     # Test public conversations endpoint with minimal data
     try:

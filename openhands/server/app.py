@@ -67,6 +67,20 @@ try:
 except ImportError:
     OPENROUTER_TEST_AVAILABLE = False
 
+# Import memory conversation routes (no file dependencies)
+try:
+    from openhands.server.routes.memory_conversation import router as memory_conversation_router
+    MEMORY_CONVERSATION_AVAILABLE = True
+except ImportError:
+    MEMORY_CONVERSATION_AVAILABLE = False
+
+# Import OpenRouter chat routes (real chat with OpenRouter API)
+try:
+    from openhands.server.routes.openrouter_chat import router as openrouter_chat_router
+    OPENROUTER_CHAT_AVAILABLE = True
+except ImportError:
+    OPENROUTER_CHAT_AVAILABLE = False
+
 mcp_app = mcp_server.http_app(path='/mcp')
 
 
@@ -124,6 +138,10 @@ async def root():
             "test_chat": "/test-chat/message",
             "openrouter_test": "/openrouter/test",
             "openrouter_health": "/openrouter/health",
+            "memory_chat": "/memory-chat/message",
+            "memory_chat_health": "/memory-chat/health",
+            "real_chat": "/chat/message",
+            "chat_health": "/chat/health",
             "hf_status": "/api/hf/status",
             "hf_ready": "/api/hf/ready",
             "hf_environment": "/api/hf/environment"
@@ -240,5 +258,19 @@ if OPENROUTER_TEST_AVAILABLE:
     logger.info("✅ OpenRouter test routes included")
 else:
     logger.warning("⚠️ OpenRouter test routes not available")
+
+# Add memory conversation routes if available
+if MEMORY_CONVERSATION_AVAILABLE:
+    app.include_router(memory_conversation_router)
+    logger.info("✅ Memory conversation routes included")
+else:
+    logger.warning("⚠️ Memory conversation routes not available")
+
+# Add OpenRouter chat routes if available
+if OPENROUTER_CHAT_AVAILABLE:
+    app.include_router(openrouter_chat_router)
+    logger.info("✅ OpenRouter chat routes included")
+else:
+    logger.warning("⚠️ OpenRouter chat routes not available")
 
 add_health_endpoints(app)

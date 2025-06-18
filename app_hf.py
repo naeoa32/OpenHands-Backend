@@ -108,9 +108,23 @@ def setup_hf_environment():
     os.environ.setdefault("ENABLE_AUTO_LINT", "false")
     os.environ.setdefault("ENABLE_SECURITY_ANALYSIS", "false")
 
-    # Use memory-based storage for read-only environments
-    os.environ.setdefault("SETTINGS_STORE_TYPE", "memory")
-    os.environ.setdefault("SECRETS_STORE_TYPE", "memory")
+    # Force ALL storage to memory mode to avoid permission issues
+    os.environ["SETTINGS_STORE_TYPE"] = "memory"
+    os.environ["SECRETS_STORE_TYPE"] = "memory"
+    os.environ["CONVERSATION_STORE_TYPE"] = "memory"
+    os.environ["FILE_STORE"] = "memory"
+    os.environ["SESSION_STORE_TYPE"] = "memory"
+    
+    # Disable all file-based features
+    os.environ["DISABLE_FILE_LOGGING"] = "true"
+    os.environ["DISABLE_PERSISTENT_SESSIONS"] = "true"
+    os.environ["DISABLE_FILE_UPLOADS"] = "true"
+    os.environ["DISABLE_TRAJECTORY_SAVING"] = "true"
+    
+    # Override any path-based configurations
+    os.environ["WORKSPACE_BASE"] = "/tmp/workspace"  # This will be created if needed
+    os.environ["CACHE_DIR"] = "/tmp/cache"
+    os.environ["FILE_STORE_PATH"] = "/tmp/file_store"
 
     # Pre-configure default LLM settings for easy access
     os.environ.setdefault("DEFAULT_LLM_MODEL", "openrouter/anthropic/claude-3-haiku-20240307")
