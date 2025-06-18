@@ -6,9 +6,19 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.impl.cli import CLIRuntime
-from openhands.runtime.impl.e2b.e2b_runtime import E2BRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
+
+# Conditional E2B import for HF Spaces compatibility
+try:
+    from openhands.runtime.impl.e2b.e2b_runtime import E2BRuntime
+    E2B_AVAILABLE = True
+except ImportError:
+    # Fallback when e2b is not available (e.g., in HF Spaces)
+    class E2BRuntime:
+        def __init__(self, *args, **kwargs):
+            raise ImportError("E2BRuntime requires e2b package. Use CLIRuntime or LocalRuntime instead.")
+    E2B_AVAILABLE = False
 
 # Conditional Docker import for HF Spaces compatibility
 try:
@@ -64,6 +74,7 @@ __all__ = [
     'RunloopRuntime',
     'DAYTONA_AVAILABLE',
     'DOCKER_AVAILABLE',
+    'E2B_AVAILABLE',
     'MODAL_AVAILABLE',
     'RUNLOOP_AVAILABLE',
 ]
