@@ -4,7 +4,20 @@ import tempfile
 from abc import ABC, abstractmethod
 from typing import Any
 
-from openhands_aci.utils.diff import get_diff  # type: ignore
+try:
+    from openhands_aci.utils.diff import get_diff  # type: ignore
+except ImportError:
+    # Fallback diff implementation for HF Spaces
+    import difflib
+    def get_diff(old_content: str, new_content: str) -> str:
+        """Fallback diff implementation."""
+        diff = list(difflib.unified_diff(
+            old_content.splitlines(keepends=True),
+            new_content.splitlines(keepends=True),
+            fromfile='old',
+            tofile='new'
+        ))
+        return ''.join(diff)
 
 from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger

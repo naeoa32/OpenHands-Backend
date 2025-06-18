@@ -4,7 +4,20 @@ import os
 
 import pytest
 from conftest import TEST_IN_CI, _close_test_runtime, _load_runtime
-from openhands_aci.utils.diff import get_diff
+try:
+    from openhands_aci.utils.diff import get_diff
+except ImportError:
+    # Fallback diff implementation for tests
+    import difflib
+    def get_diff(old_content: str, new_content: str) -> str:
+        """Fallback diff implementation."""
+        diff = list(difflib.unified_diff(
+            old_content.splitlines(keepends=True),
+            new_content.splitlines(keepends=True),
+            fromfile='old',
+            tofile='new'
+        ))
+        return ''.join(diff)
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileEditAction, FileReadAction
