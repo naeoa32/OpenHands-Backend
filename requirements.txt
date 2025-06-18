@@ -103,7 +103,7 @@ idna
 # docker - HF Spaces doesn't support Docker-in-Docker
 # pythonnet - Windows-specific, causes build issues  
 # modal - External cloud service, heavy dependency
-# daytona-sdk - Not essential for core functionality
+daytona-sdk==0.21.1
 # poetry - Not needed at runtime
 # qtconsole - GUI dependency, not needed for API
 # ipywidgets - Jupyter dependency, not needed
