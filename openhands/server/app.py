@@ -46,6 +46,13 @@ try:
 except ImportError:
     HF_SPACES_AVAILABLE = False
 
+# Import simple conversation routes
+try:
+    from openhands.server.routes.simple_conversation import router as simple_conversation_router
+    SIMPLE_CONVERSATION_AVAILABLE = True
+except ImportError:
+    SIMPLE_CONVERSATION_AVAILABLE = False
+
 mcp_app = mcp_server.http_app(path='/mcp')
 
 
@@ -99,6 +106,8 @@ async def root():
             "api_models": "/api/options/models",
             "api_agents": "/api/options/agents",
             "conversations": "/api/conversations",
+            "simple_conversations": "/api/conversations/simple",
+            "test_chat": "/test-chat",
             "hf_status": "/api/hf/status",
             "hf_ready": "/api/hf/ready",
             "hf_environment": "/api/hf/environment"
@@ -166,5 +175,15 @@ app.include_router(trajectory_router)
 # Add HF Spaces routes if available
 if HF_SPACES_AVAILABLE:
     app.include_router(hf_spaces_router)
+    logger.info("✅ HF Spaces routes included")
+else:
+    logger.warning("⚠️ HF Spaces routes not available")
+
+# Add simple conversation routes if available
+if SIMPLE_CONVERSATION_AVAILABLE:
+    app.include_router(simple_conversation_router)
+    logger.info("✅ Simple conversation routes included")
+else:
+    logger.warning("⚠️ Simple conversation routes not available")
 
 add_health_endpoints(app)

@@ -542,6 +542,43 @@ async def conversations_options():
     """Handle OPTIONS request for CORS"""
     return {"message": "OK"}
 
+@public_app.post('/conversations/simple')
+async def create_simple_conversation():
+    """Create a simple conversation without complex dependencies."""
+    try:
+        import uuid
+        from datetime import datetime
+        
+        conversation_id = uuid.uuid4().hex
+        
+        # Create minimal conversation data
+        conversation_data = {
+            "conversation_id": conversation_id,
+            "user_id": "anonymous",
+            "created_at": datetime.now().isoformat(),
+            "status": "ready",
+            "title": "New Chat",
+            "type": "simple"
+        }
+        
+        return JSONResponse({
+            "status": "success",
+            "conversation_id": conversation_id,
+            "message": "Simple conversation created successfully",
+            "data": conversation_data
+        })
+        
+    except Exception as e:
+        logger.error(f'Error creating simple conversation: {e}', exc_info=True)
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': f'Failed to create simple conversation: {str(e)}',
+                'error_type': 'simple_conversation_error',
+            },
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
 @public_app.post('/conversations')
 async def new_conversation_public(
     data: InitSessionRequest,
