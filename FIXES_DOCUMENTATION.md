@@ -76,8 +76,10 @@
 - `GET /api/hf/status` - Status deployment HF Spaces
 - `GET /api/hf/ready` - Health check untuk HF Spaces
 - `GET /api/hf/environment` - Informasi environment variables
+- `GET /api/hf/debug` - Debug informasi sistem dan environment
 - `GET /api/hf/logs-container` - Endpoint untuk logs (placeholder)
 - `GET /api/hf/logs` - Endpoint untuk logs (placeholder)
+- `POST /api/hf/test-conversation` - Test endpoint untuk membuat conversation sederhana
 
 ## Testing
 

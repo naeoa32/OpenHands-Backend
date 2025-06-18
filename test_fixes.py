@@ -39,6 +39,9 @@ def test_endpoints():
         "/api/hf/status",
         "/api/hf/ready",
         "/api/hf/environment",
+        "/api/hf/debug",
+        "/api/hf/logs-container",
+        "/api/hf/logs",
         "/docs",
         "/openapi.json"
     ]
@@ -67,6 +70,44 @@ def test_endpoints():
             print(f"   404 Response: {data.get('message', 'No message')}")
     except Exception as e:
         print(f"❌ 404 Test failed: {e}")
+    
+    # Test POST endpoints
+    print("\n🧪 Testing POST endpoints...")
+    
+    # Test HF test conversation endpoint
+    try:
+        response = requests.post(f"{base_url}/api/hf/test-conversation", timeout=10)
+        status = "✅" if response.status_code == 200 else "❌"
+        print(f"{status} POST /api/hf/test-conversation - Status: {response.status_code}")
+        if response.status_code == 200:
+            data = response.json()
+            print(f"   Test conversation ID: {data.get('conversation_id', 'None')}")
+    except Exception as e:
+        print(f"❌ POST /api/hf/test-conversation failed: {e}")
+    
+    # Test public conversations endpoint with minimal data
+    try:
+        test_data = {
+            "initial_user_msg": "Hello, this is a test message",
+            "repository": None,
+            "selected_branch": None,
+            "image_urls": [],
+            "replay_json": None,
+            "suggested_task": None,
+            "git_provider": None,
+            "conversation_instructions": None
+        }
+        response = requests.post(f"{base_url}/api/conversations", json=test_data, timeout=10)
+        status = "✅" if response.status_code in [200, 400, 401] else "❌"  # Accept auth errors as expected
+        print(f"{status} POST /api/conversations - Status: {response.status_code}")
+        if response.status_code == 200:
+            data = response.json()
+            print(f"   Conversation ID: {data.get('conversation_id', 'None')}")
+        elif response.status_code in [400, 401]:
+            data = response.json()
+            print(f"   Expected error: {data.get('error_type', 'unknown')}")
+    except Exception as e:
+        print(f"❌ POST /api/conversations failed: {e}")
 
 def run_server():
     """Run the server in a subprocess"""
