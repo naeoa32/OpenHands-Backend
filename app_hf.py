@@ -1,32 +1,34 @@
+"""
+OpenHands Backend optimized for Hugging Face Spaces deployment
+"""
 import os
 import secrets
 import tempfile
 import uvicorn
 
-
 # Configure for Hugging Face Spaces BEFORE importing app
 def setup_hf_environment():
     """Setup environment variables for Hugging Face Spaces"""
-
+    
     # Set default environment variables for HF Spaces
     os.environ.setdefault("OPENHANDS_RUNTIME", "local")
     os.environ.setdefault("CORS_ALLOWED_ORIGINS", "*")
     os.environ.setdefault("SERVE_FRONTEND", "false")
-
+    
     # Create writable directories
     file_store_path = "/tmp/openhands"
     cache_dir = "/tmp/cache"
-
+    
     # Ensure directories exist with proper permissions
     os.makedirs(file_store_path, mode=0o755, exist_ok=True)
     os.makedirs(cache_dir, mode=0o755, exist_ok=True)
-
+    
     # Set file store path to a writable directory in HF Spaces
     os.environ.setdefault("FILE_STORE_PATH", file_store_path)
-
+    
     # Set cache directory to a writable location
     os.environ.setdefault("CACHE_DIR", cache_dir)
-
+    
     # Generate JWT secret if not provided (for HF Spaces)
     if not os.getenv("JWT_SECRET"):
         jwt_secret = secrets.token_urlsafe(32)
@@ -99,7 +101,7 @@ if __name__ == "__main__":
     print("   GET  /api/hf/environment")
     print("   POST /api/conversations")
     print("🌍 Ready for frontend integration!")
-
+    
     # Debug environment
     print("\n🔍 Debug Info:")
     print(f"   LLM_MODEL: {os.getenv('LLM_MODEL', 'Not set')}")
