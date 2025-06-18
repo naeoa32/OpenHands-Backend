@@ -28,8 +28,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def setup_personal_environment():
-    """Setup environment for personal use - no cloud services needed."""
-    logger.info("🎯 Setting up Personal OpenHands Backend...")
+    """Setup environment for OpenRouter-only personal use."""
+    logger.info("🎯 Setting up Personal OpenHands Backend for OpenRouter...")
     
     # Essential environment variables for personal use
     os.environ.setdefault('OPENHANDS_DISABLE_AUTH', 'true')
@@ -40,11 +40,23 @@ def setup_personal_environment():
     os.environ.setdefault('FILE_STORE', 'local')  # Local file storage, no Google Cloud
     os.environ.setdefault('FILE_STORE_PATH', '/tmp/openhands_storage')
     
+    # OpenRouter-specific configuration
+    os.environ.setdefault('LLM_BASE_URL', 'https://openrouter.ai/api/v1')
+    os.environ.setdefault('LLM_MODEL', 'openrouter/anthropic/claude-3-haiku-20240307')
+    
+    # Set OpenRouter API key from environment (user will set this in HF Spaces)
+    if not os.environ.get('LLM_API_KEY'):
+        logger.warning("⚠️  LLM_API_KEY not set! Please set your OpenRouter API key in HF Spaces environment variables.")
+        logger.info("💡 Go to HF Spaces Settings → Environment Variables → Add:")
+        logger.info("💡 LLM_API_KEY = your_openrouter_api_key")
+    else:
+        logger.info("✅ OpenRouter API key found!")
+    
     # Create necessary directories
     Path('/tmp/workspace').mkdir(exist_ok=True)
     Path('/tmp/openhands_storage').mkdir(exist_ok=True)
     
-    logger.info("✅ Personal environment configured - no cloud dependencies!")
+    logger.info("✅ Personal environment configured for OpenRouter!")
 
 def check_personal_dependencies():
     """Check only essential dependencies for personal use."""
@@ -142,6 +154,7 @@ def main():
             return {
                 "title": "Personal OpenHands Backend",
                 "description": "Made for you and your girlfriend 💕",
+                "setup": "OpenRouter-only configuration",
                 "features": {
                     "ai_agents": [
                         "CodeActAgent - Complete coding assistant",
@@ -163,12 +176,20 @@ def main():
                         "insert - Add content"
                     ]
                 },
-                "no_dependencies": [
+                "llm_setup": {
+                    "provider": "OpenRouter only",
+                    "api_key_needed": "Your OpenRouter API key",
+                    "models_available": "All OpenRouter models (Claude, GPT, etc.)",
+                    "no_separate_keys": "No need for OpenAI or Anthropic keys"
+                },
+                "minimal_dependencies": [
+                    "Only LiteLLM for OpenRouter",
+                    "No OpenAI package",
+                    "No Anthropic package", 
                     "No Google Cloud Storage",
                     "No Docker containers",
                     "No E2B sandboxes",
-                    "No Redis cache",
-                    "Pure local operation"
+                    "Pure local + OpenRouter"
                 ]
             }
         
