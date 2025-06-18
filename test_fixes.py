@@ -44,6 +44,10 @@ def test_endpoints():
         "/api/hf/logs",
         "/api/simple/health",
         "/api/simple/test",
+        "/openrouter/",
+        "/openrouter/health",
+        "/test-chat/",
+        "/test-chat/health",
         "/docs",
         "/openapi.json"
     ]
@@ -101,6 +105,24 @@ def test_endpoints():
             print(f"   Response: {data.get('response', 'None')}")
     except Exception as e:
         print(f"❌ POST /api/simple/conversation failed: {e}")
+    
+    # Test OpenRouter endpoint (without API key for now)
+    try:
+        test_data = {
+            "message": "Hello, this is a test for OpenRouter API",
+            "model": "openai/gpt-4o-mini"
+        }
+        response = requests.post(f"{base_url}/openrouter/test", json=test_data, timeout=10)
+        status = "✅" if response.status_code in [200, 400] else "❌"  # 400 expected without API key
+        print(f"{status} POST /openrouter/test - Status: {response.status_code}")
+        if response.status_code == 200:
+            data = response.json()
+            print(f"   OpenRouter response: {data.get('status', 'unknown')}")
+        elif response.status_code == 400:
+            data = response.json()
+            print(f"   Expected: {data.get('message', 'API key required')}")
+    except Exception as e:
+        print(f"❌ POST /openrouter/test failed: {e}")
     
     # Test public conversations endpoint with minimal data
     try:

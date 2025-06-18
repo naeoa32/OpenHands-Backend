@@ -68,8 +68,40 @@ def setup_hf_environment():
     # Set other HF-specific configs
     os.environ.setdefault("DISABLE_SECURITY", "true")  # For public API
     os.environ.setdefault("SANDBOX_RUNTIME_CONTAINER_IMAGE", "")  # Disable Docker
+    
+    # Use OpenHands standard configuration for HF Spaces
+    # Based on official OpenHands configuration options
+    
+    # Core configuration
+    os.environ.setdefault("WORKSPACE_BASE", "./workspace")
+    os.environ.setdefault("CACHE_DIR", "./cache")
+    os.environ.setdefault("FILE_STORE_PATH", "./file_store")
+    os.environ.setdefault("FILE_STORE", "memory")  # Use memory store for HF Spaces
+    
+    # Sandbox configuration - disable Docker for HF Spaces
+    os.environ.setdefault("SANDBOX_RUNTIME_CONTAINER_IMAGE", "")
     os.environ.setdefault("SANDBOX_USER_ID", "1000")
-    os.environ.setdefault("WORKSPACE_BASE", "/tmp/workspace")
+    os.environ.setdefault("SANDBOX_TIMEOUT", "120")
+    
+    # Security configuration - disable for public API
+    os.environ.setdefault("SECURITY_CONFIRMATION_MODE", "false")
+    
+    # Agent configuration
+    os.environ.setdefault("DEFAULT_AGENT", "CodeActAgent")
+    os.environ.setdefault("MAX_ITERATIONS", "100")
+    
+    # LLM configuration - KEEP OPENROUTER FOCUS
+    # Don't override if user has set specific OpenRouter config
+    if not os.getenv("LLM_API_KEY"):
+        os.environ.setdefault("LLM_MODEL", "openai/gpt-4o-mini")  # Default OpenRouter model
+        os.environ.setdefault("LLM_BASE_URL", "https://openrouter.ai/api/v1")
+        os.environ.setdefault("LLM_CUSTOM_LLM_PROVIDER", "openai")
+    
+    # Standard LLM settings
+    os.environ.setdefault("LLM_NUM_RETRIES", "8")
+    os.environ.setdefault("LLM_RETRY_MIN_WAIT", "15")
+    os.environ.setdefault("LLM_RETRY_MAX_WAIT", "120")
+    os.environ.setdefault("LLM_TEMPERATURE", "0.0")
 
     # Additional security bypass for HF Spaces
     os.environ.setdefault("OPENHANDS_DISABLE_AUTH", "true")

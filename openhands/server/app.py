@@ -53,6 +53,20 @@ try:
 except ImportError:
     SIMPLE_CONVERSATION_AVAILABLE = False
 
+# Import test chat routes (ultra-simple)
+try:
+    from openhands.server.routes.test_chat import router as test_chat_router
+    TEST_CHAT_AVAILABLE = True
+except ImportError:
+    TEST_CHAT_AVAILABLE = False
+
+# Import OpenRouter test routes
+try:
+    from openhands.server.routes.openrouter_test import router as openrouter_test_router
+    OPENROUTER_TEST_AVAILABLE = True
+except ImportError:
+    OPENROUTER_TEST_AVAILABLE = False
+
 mcp_app = mcp_server.http_app(path='/mcp')
 
 
@@ -106,8 +120,10 @@ async def root():
             "api_models": "/api/options/models",
             "api_agents": "/api/options/agents",
             "conversations": "/api/conversations",
-            "simple_conversations": "/api/conversations/simple",
-            "test_chat": "/test-chat",
+            "simple_conversations": "/api/simple/conversation",
+            "test_chat": "/test-chat/message",
+            "openrouter_test": "/openrouter/test",
+            "openrouter_health": "/openrouter/health",
             "hf_status": "/api/hf/status",
             "hf_ready": "/api/hf/ready",
             "hf_environment": "/api/hf/environment"
@@ -210,5 +226,19 @@ if SIMPLE_CONVERSATION_AVAILABLE:
     logger.info("✅ Simple conversation routes included")
 else:
     logger.warning("⚠️ Simple conversation routes not available")
+
+# Add test chat routes if available
+if TEST_CHAT_AVAILABLE:
+    app.include_router(test_chat_router)
+    logger.info("✅ Test chat routes included")
+else:
+    logger.warning("⚠️ Test chat routes not available")
+
+# Add OpenRouter test routes if available
+if OPENROUTER_TEST_AVAILABLE:
+    app.include_router(openrouter_test_router)
+    logger.info("✅ OpenRouter test routes included")
+else:
+    logger.warning("⚠️ OpenRouter test routes not available")
 
 add_health_endpoints(app)
