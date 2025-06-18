@@ -116,6 +116,31 @@ async def root():
         "openapi": "/openapi.json"
     })
 
+@app.post("/test-chat")
+async def test_chat():
+    """Ultra simple test endpoint for chat functionality."""
+    try:
+        import uuid
+        from datetime import datetime
+        
+        chat_id = uuid.uuid4().hex
+        
+        return JSONResponse({
+            "status": "success",
+            "chat_id": chat_id,
+            "message": "Test chat created successfully",
+            "timestamp": datetime.now().isoformat(),
+            "ready": True
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"Test chat failed: {str(e)}"
+            }
+        )
+
 # Add global exception handlers
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc: HTTPException):
