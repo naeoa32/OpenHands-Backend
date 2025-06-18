@@ -159,4 +159,38 @@ jobs:
                 print(f"❌ {endpoint} - Error: {e}")
         
         print("🎉 Deployment test completed!")
+        print(f"🌐 Space URL: {space_url}")
+        print(f"📚 API Docs: {space_url}/docs")
+        print(f"🎭 Novel Writing: {space_url}/novel/")
+        print(f"🤖 Chat API: {space_url}/chat/")
         EOF
+
+    - name: 📝 Create Deployment Summary
+      if: always()
+      run: |
+        echo "## 🎭 Novel Writing + OpenRouter Deployment" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Deployment Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Space**: https://huggingface.co/spaces/Minatoz997/Backend66" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🌐 Live URLs" >> $GITHUB_STEP_SUMMARY
+        echo "- **Main API**: https://minatoz997-backend66.hf.space" >> $GITHUB_STEP_SUMMARY
+        echo "- **API Docs**: https://minatoz997-backend66.hf.space/docs" >> $GITHUB_STEP_SUMMARY
+        echo "- **Novel Writing**: https://minatoz997-backend66.hf.space/novel/" >> $GITHUB_STEP_SUMMARY
+        echo "- **Chat API**: https://minatoz997-backend66.hf.space/chat/" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎭 Novel Writing Features" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Indonesian Creative Writing Assistant" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ 7 Specialized Templates" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Intelligent Model Selection (Budget/Premium)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Session Management" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Template-specific Questions" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🤖 Chat Features" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ OpenRouter Integration" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Multiple AI Models" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Memory-based Conversations" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Real-time AI Responses" >> $GITHUB_STEP_SUMMARY
