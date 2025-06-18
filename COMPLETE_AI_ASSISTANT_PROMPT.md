@@ -41,8 +41,10 @@ I'm working on a **personal OpenHands backend** for deployment on **Hugging Face
 - ❌ **DELETED:** `openhands/utils/chunk_localizer.py` (tree_sitter dependency)
 - ✅ **FIXED:** `openhands/runtime/utils/edit.py` with simple fallback implementation
 - ✅ **FIXED:** All `openhands_aci` imports with comprehensive fallback implementations
+- ✅ **FIXED:** `openhands/runtime/impl/__init__.py` with E2B fallback implementation
 - ✅ **ADDED:** Complete `OHEditor`, `ToolResult`, `ToolError` fallback classes
 - ✅ **ADDED:** Repository tools fallbacks (`explore_tree_structure`, `get_entity_contents`, `search_code_snippets`)
+- ✅ **ADDED:** E2B runtime fallback for HF Spaces compatibility
 
 **2. Server Testing COMPLETED:**
 - ✅ **ALL imports successful** (FastAPI, LiteLLM, OpenHands core, agenthub, server)
@@ -103,6 +105,7 @@ OpenHands-Backend/
 ❌ ModuleNotFoundError: No module named 'openhands_aci'
 ❌ ModuleNotFoundError: No module named 'tree_sitter_language_pack'
 ❌ ImportError: cannot import name 'get_parser' from 'tree_sitter_language_pack'
+❌ ModuleNotFoundError: No module named 'e2b'
 ```
 
 ### **CURRENT STATUS (WORKING):**
@@ -159,6 +162,19 @@ class Chunk(BaseModel):
 
 def get_top_k_chunk_matches(chunks: List[Chunk], query: str, k: int = 5):
     # Simple word-based text matching
+
+**4. E2B Runtime Fallback (in runtime/impl/__init__.py):**
+```python
+# Conditional E2B import for HF Spaces compatibility
+try:
+    from openhands.runtime.impl.e2b.e2b_runtime import E2BRuntime
+    E2B_AVAILABLE = True
+except ImportError:
+    # Fallback when e2b is not available (e.g., in HF Spaces)
+    class E2BRuntime:
+        def __init__(self, *args, **kwargs):
+            raise ImportError("E2BRuntime requires e2b package. Use CLIRuntime or LocalRuntime instead.")
+    E2B_AVAILABLE = False
 ```
 
 ---
