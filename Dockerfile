@@ -1,10 +1,11 @@
 # Optimized Dockerfile for Hugging Face Spaces
+# Using E2B Runtime for cloud-based code execution
 FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (no Docker needed)
 RUN apt-get update && apt-get install -y \
     git \
     curl \
