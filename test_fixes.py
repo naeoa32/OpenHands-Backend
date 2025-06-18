@@ -42,6 +42,8 @@ def test_endpoints():
         "/api/hf/debug",
         "/api/hf/logs-container",
         "/api/hf/logs",
+        "/api/simple/health",
+        "/api/simple/test",
         "/docs",
         "/openapi.json"
     ]
@@ -84,6 +86,21 @@ def test_endpoints():
             print(f"   Test conversation ID: {data.get('conversation_id', 'None')}")
     except Exception as e:
         print(f"❌ POST /api/hf/test-conversation failed: {e}")
+    
+    # Test simple conversation endpoint
+    try:
+        test_data = {
+            "message": "Hello, this is a test message"
+        }
+        response = requests.post(f"{base_url}/api/simple/conversation", json=test_data, timeout=10)
+        status = "✅" if response.status_code == 200 else "❌"
+        print(f"{status} POST /api/simple/conversation - Status: {response.status_code}")
+        if response.status_code == 200:
+            data = response.json()
+            print(f"   Conversation ID: {data.get('conversation_id', 'None')}")
+            print(f"   Response: {data.get('response', 'None')}")
+    except Exception as e:
+        print(f"❌ POST /api/simple/conversation failed: {e}")
     
     # Test public conversations endpoint with minimal data
     try:

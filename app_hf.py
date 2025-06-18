@@ -27,10 +27,31 @@ def setup_hf_environment():
     # Create writable directories
     file_store_path = "/tmp/openhands"
     cache_dir = "/tmp/cache"
+    workspace_dir = "/tmp/workspace"
+    
+    # All directories that might be needed
+    directories_to_create = [
+        file_store_path,
+        cache_dir, 
+        workspace_dir,
+        "/tmp/openhands/sessions",
+        "/tmp/openhands/logs",
+        "/tmp/openhands/data",
+        "/tmp/openhands/storage",
+        "/tmp/openhands/conversations",
+        "/tmp/openhands/models",
+        "/tmp/openhands/settings"
+    ]
     
     # Ensure directories exist with proper permissions
-    os.makedirs(file_store_path, mode=0o755, exist_ok=True)
-    os.makedirs(cache_dir, mode=0o755, exist_ok=True)
+    for directory in directories_to_create:
+        try:
+            os.makedirs(directory, mode=0o777, exist_ok=True)
+            os.chmod(directory, 0o777)
+            logger.info(f"✅ Created directory: {directory}")
+        except Exception as e:
+            logger.warning(f"⚠️ Could not create directory {directory}: {e}")
+            # Continue with other directories
     
     # Set file store path to a writable directory in HF Spaces
     os.environ.setdefault("FILE_STORE_PATH", file_store_path)
@@ -76,7 +97,14 @@ def setup_hf_environment():
 
     # Create workspace directory
     workspace_dir = "/tmp/workspace"
-    os.makedirs(workspace_dir, mode=0o755, exist_ok=True)
+    os.makedirs(workspace_dir, mode=0o777, exist_ok=True)
+    
+    # Set workspace permissions
+    try:
+        os.chmod(workspace_dir, 0o777)
+        logger.info(f"✅ Set workspace permissions")
+    except Exception as e:
+        logger.warning(f"⚠️ Could not set workspace permissions: {e}")
 
     return file_store_path, cache_dir
 
