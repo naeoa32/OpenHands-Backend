@@ -1,12 +1,17 @@
-name: Deploy to HuggingFace Spaces
+name: 🚀 Deploy to HuggingFace Spaces (Novel Writing + OpenRouter)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
     types: [closed]
   workflow_dispatch:  # Manual trigger
+    inputs:
+      force_deploy:
+        description: 'Force deployment'
+        required: false
+        default: 'false'
 
 jobs:
   deploy:
@@ -28,7 +33,40 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install huggingface_hub
+        pip install huggingface_hub requests
+
+    - name: 🧪 Test Novel Writing Features
+      run: |
+        pip install -r requirements.txt
+        python -c "
+        import sys
+        sys.path.append('.')
+        
+        # Test novel writing imports
+        try:
+            from openhands.core.novel_writing_prompts import create_novel_writing_prompt, get_novel_writing_questions
+            from openhands.core.novel_writing_config import create_novel_writing_llm_config, should_use_premium_model
+            from openhands.server.routes.novel_writing import router as novel_router
+            print('✅ Novel writing imports successful')
+        except Exception as e:
+            print(f'❌ Novel writing import error: {e}')
+            sys.exit(1)
+            
+        # Test novel writing functionality
+        try:
+            prompt = create_novel_writing_prompt('character-development', 'Test prompt')
+            questions = get_novel_writing_questions('character-development')
+            use_premium = should_use_premium_model('character-development', 1000)
+            
+            print(f'✅ Novel prompt: {len(prompt)} chars')
+            print(f'✅ Questions: {len(questions)} items')
+            print(f'✅ Model selection: {\"Premium\" if use_premium else \"Budget\"}')
+        except Exception as e:
+            print(f'❌ Novel writing test failed: {e}')
+            sys.exit(1)
+            
+        print('🎭 Novel writing features working!')
+        "
 
     - name: Deploy to HuggingFace Spaces
       env:
@@ -50,7 +88,7 @@ jobs:
                 repo_id=f"{os.environ['HF_USERNAME']}/{os.environ['HF_SPACE_NAME']}",
                 repo_type="space",
                 ignore_patterns=[".git", ".github", "__pycache__", "*.pyc", ".env"],
-                commit_message="🚀 Auto-deploy: Complete OpenRouter + Novel Writing Integration"
+                commit_message="🎭 Auto-deploy: Complete OpenRouter + Indonesian Novel Writing Integration"
             )
             print("✅ Successfully deployed to HuggingFace Spaces!")
         except Exception as e:
@@ -98,12 +136,16 @@ jobs:
         
         space_url = f"https://{os.environ['HF_USERNAME']}-{os.environ['HF_SPACE_NAME']}.hf.space"
         
-        # Test endpoints
+        # Test endpoints including novel writing
         endpoints_to_test = [
             "/",
             "/health", 
+            "/novel/",
             "/novel/health",
-            "/chat/health"
+            "/novel/templates",
+            "/chat/health",
+            "/openrouter/health",
+            "/memory-chat/health"
         ]
         
         print(f"🧪 Testing deployment at: {space_url}")
