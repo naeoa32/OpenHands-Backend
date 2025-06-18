@@ -125,6 +125,17 @@ def test_endpoints():
             print(f"   Expected error: {data.get('error_type', 'unknown')}")
     except Exception as e:
         print(f"❌ POST /api/conversations failed: {e}")
+    
+    # Test ultra simple chat endpoint
+    try:
+        response = requests.post(f"{base_url}/test-chat", timeout=10)
+        status = "✅" if response.status_code == 200 else "❌"
+        print(f"{status} POST /test-chat - Status: {response.status_code}")
+        if response.status_code == 200:
+            data = response.json()
+            print(f"   Test chat ID: {data.get('chat_id', 'None')}")
+    except Exception as e:
+        print(f"❌ POST /test-chat failed: {e}")
 
 def run_server():
     """Run the server in a subprocess"""
