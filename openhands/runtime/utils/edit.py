@@ -37,7 +37,40 @@ from openhands.events.observation import (
 from openhands.linter import DefaultLinter
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
-from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
+try:
+    from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
+except ImportError:
+    # Fallback for HF Spaces - simple chunk implementation
+    from pydantic import BaseModel
+    from typing import List
+    
+    class Chunk(BaseModel):
+        text: str
+        start_line: int = 0
+        end_line: int = 0
+    
+    def get_top_k_chunk_matches(chunks: List[Chunk], query: str, k: int = 5) -> List[Chunk]:
+        """Simple fallback chunk matching."""
+        # Simple text matching fallback
+        scored_chunks = []
+        query_lower = query.lower()
+        
+        for chunk in chunks:
+            score = 0
+            chunk_text_lower = chunk.text.lower()
+            
+            # Simple scoring based on word matches
+            query_words = query_lower.split()
+            for word in query_words:
+                if word in chunk_text_lower:
+                    score += 1
+            
+            if score > 0:
+                scored_chunks.append((score, chunk))
+        
+        # Sort by score and return top k
+        scored_chunks.sort(key=lambda x: x[0], reverse=True)
+        return [chunk for _, chunk in scored_chunks[:k]]
 
 USER_MSG = """
 Code changes will be provided in the form of a draft. You will need to apply the draft to the original code. 
