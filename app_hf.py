@@ -45,6 +45,10 @@ def setup_hf_environment():
     os.environ.setdefault("MAX_ITERATIONS", "30")
     os.environ.setdefault("DEFAULT_AGENT", "CodeActAgent")
     
+    # File storage configuration - use local storage for HF Spaces
+    os.environ.setdefault("FILE_STORE", "local")
+    os.environ.setdefault("FILE_STORE_PATH", "/tmp/openhands_storage")
+    
     # LLM configuration - use OpenRouter by default
     if not os.getenv("LLM_API_KEY"):
         logger.warning("⚠️  LLM_API_KEY not set. Please set it in HF Spaces environment variables.")

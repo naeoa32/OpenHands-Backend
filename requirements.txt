@@ -10,7 +10,7 @@ python-dotenv
 # ===== LLM and AI Dependencies =====
 litellm>=1.60.0,!=1.64.4,!=1.67.*
 aiohttp>=3.9.0,!=3.11.13
-google-generativeai
+# google-generativeai - Excluded (causes google.cloud conflicts in HF Spaces)
 anthropic
 openai
 
@@ -83,10 +83,10 @@ botocore
 redis>=5.2,<7.0
 e2b>=1.0.5,<1.6.0
 
-# ===== Google APIs =====
-google-api-python-client>=2.164.0
-google-auth-httplib2
-google-auth-oauthlib
+# ===== Google APIs (Excluded for HF Spaces) =====
+# google-api-python-client>=2.164.0 - Causes google.cloud storage conflicts
+# google-auth-httplib2 - Not needed without Google APIs  
+# google-auth-oauthlib - Not needed without Google APIs
 
 # ===== HTTP and Network =====
 requests
