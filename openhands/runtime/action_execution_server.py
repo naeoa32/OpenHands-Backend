@@ -25,10 +25,111 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
-from openhands_aci.editor.editor import OHEditor
-from openhands_aci.editor.exceptions import ToolError
-from openhands_aci.editor.results import ToolResult
-from openhands_aci.utils.diff import get_diff
+try:
+    from openhands_aci.editor.editor import OHEditor
+    from openhands_aci.editor.exceptions import ToolError
+    from openhands_aci.editor.results import ToolResult
+    from openhands_aci.utils.diff import get_diff
+    OPENHANDS_ACI_AVAILABLE = True
+except ImportError:
+    # Fallback classes for HF Spaces deployment
+    import os
+    import difflib
+    
+    class OHEditor:
+        def __init__(self, workspace_root=None, *args, **kwargs):
+            self.workspace_root = workspace_root or os.getcwd()
+        
+        def __call__(self, command, path, file_text=None, view_range=None, old_str=None, new_str=None, insert_line=None, enable_linting=False):
+            """Fallback file editor implementation."""
+            try:
+                if command == 'view':
+                    return self._view_file(path, view_range)
+                elif command == 'create':
+                    return self._create_file(path, file_text or '')
+                elif command == 'str_replace':
+                    return self._str_replace(path, old_str, new_str)
+                elif command == 'insert':
+                    return self._insert_line(path, insert_line, new_str or '')
+                else:
+                    raise ToolError(f"Unknown command: {command}")
+            except Exception as e:
+                raise ToolError(str(e))
+        
+        def _view_file(self, path, view_range=None):
+            if os.path.isdir(path):
+                files = []
+                for root, dirs, filenames in os.walk(path):
+                    level = root.replace(path, '').count(os.sep)
+                    if level < 2:  # Only 2 levels deep
+                        for f in filenames:
+                            if not f.startswith('.'):
+                                files.append(os.path.join(root, f))
+                        for d in dirs:
+                            if not d.startswith('.'):
+                                files.append(os.path.join(root, d) + '/')
+                content = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n"
+                content += '\n'.join(sorted(files))
+                return ToolResult(content)
+            else:
+                with open(path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                if view_range:
+                    start, end = view_range
+                    lines = lines[start-1:end]
+                content = f"Here's the result of running `cat -n` on {path}:\n"
+                for i, line in enumerate(lines, 1):
+                    content += f"{i:6}\t{line.rstrip()}\n"
+                return ToolResult(content)
+        
+        def _create_file(self, path, file_text):
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(file_text)
+            return ToolResult(f"File created successfully at {path}")
+        
+        def _str_replace(self, path, old_str, new_str):
+            with open(path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            if old_str not in content:
+                return ToolResult(f"No replacement was performed. old_str `{old_str}` did not appear verbatim in {path}")
+            
+            new_content = content.replace(old_str, new_str)
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            
+            return ToolResult(f"The file {path} has been edited. Here's the result of running `cat -n` on a snippet of {path}:\n{new_content[:500]}")
+        
+        def _insert_line(self, path, insert_line, new_str):
+            with open(path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            lines.insert(insert_line, new_str + '\n')
+            
+            with open(path, 'w', encoding='utf-8') as f:
+                f.writelines(lines)
+            
+            return ToolResult(f"The file {path} has been edited. Inserted line at position {insert_line}")
+    
+    class ToolError(Exception):
+        pass
+    
+    class ToolResult:
+        def __init__(self, content, success=True):
+            self.content = content
+            self.success = success
+    
+    def get_diff(old_content, new_content):
+        diff = list(difflib.unified_diff(
+            old_content.splitlines(keepends=True),
+            new_content.splitlines(keepends=True),
+            fromfile='old',
+            tofile='new'
+        ))
+        return ''.join(diff)
+    
+    OPENHANDS_ACI_AVAILABLE = False
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
