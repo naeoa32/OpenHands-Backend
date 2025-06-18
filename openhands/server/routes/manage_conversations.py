@@ -552,65 +552,79 @@ async def new_conversation_public(
     """
     logger.info(f'initializing_new_conversation_public:{data}')
     
-    # Use default values for authentication-dependent parameters
-    user_id = "anonymous"
-    provider_tokens = None
-    user_secrets = None
-    auth_type = None
-    
-    repository = data.repository
-    selected_branch = data.selected_branch
-    initial_user_msg = data.initial_user_msg
-    image_urls = data.image_urls or []
-    replay_json = data.replay_json
-    suggested_task = data.suggested_task
-    git_provider = data.git_provider
-    conversation_instructions = data.conversation_instructions
-
-    conversation_trigger = ConversationTrigger.GUI
-
-    if suggested_task:
-        initial_user_msg = suggested_task.get_prompt_for_task()
-        conversation_trigger = ConversationTrigger.SUGGESTED_TASK
-
     try:
-        # Skip repository validation for public endpoint
-        if repository and provider_tokens:
-            provider_handler = ProviderHandler(provider_tokens)
-            # Check against git_provider, otherwise check all provider apis
-            if git_provider:
-                provider_handler.check_provider_api(git_provider)
-            else:
-                provider_handler.check_all_provider_apis()
+        # Use default values for authentication-dependent parameters
+        user_id = "anonymous"
+        provider_tokens = None
+        user_secrets = None
+        auth_type = None
+        
+        repository = data.repository
+        selected_branch = data.selected_branch
+        initial_user_msg = data.initial_user_msg
+        image_urls = data.image_urls or []
+        replay_json = data.replay_json
+        suggested_task = data.suggested_task
+        git_provider = data.git_provider
+        conversation_instructions = data.conversation_instructions
 
+        conversation_trigger = ConversationTrigger.GUI
+
+        if suggested_task:
+            initial_user_msg = suggested_task.get_prompt_for_task()
+            conversation_trigger = ConversationTrigger.SUGGESTED_TASK
+
+        # Skip repository validation for public endpoint to avoid auth errors
         conversation_id = uuid.uuid4().hex
         
-        # Create conversation with minimal settings
-        conversation = await create_new_conversation(
-            user_id=user_id,
-            git_provider_tokens=provider_tokens,
-            custom_secrets=user_secrets,
-            selected_repository=repository,
-            selected_branch=selected_branch,
-            initial_user_msg=initial_user_msg,
-            image_urls=image_urls,
-            replay_json=replay_json,
-            conversation_trigger=conversation_trigger,
-            conversation_instructions=conversation_instructions,
-            conversation_id=conversation_id,
-        )
+        # Create conversation with minimal settings and better error handling
+        try:
+            conversation = await create_new_conversation(
+                user_id=user_id,
+                git_provider_tokens=provider_tokens,
+                custom_secrets=user_secrets,
+                selected_repository=repository,
+                selected_branch=selected_branch,
+                initial_user_msg=initial_user_msg,
+                image_urls=image_urls,
+                replay_json=replay_json,
+                conversation_trigger=conversation_trigger,
+                conversation_instructions=conversation_instructions,
+                conversation_id=conversation_id,
+            )
 
-        return ConversationResponse(
-            conversation_id=conversation_id,
-            status='success',
-        )
+            return ConversationResponse(
+                conversation_id=conversation_id,
+                status='success',
+            )
+        except MissingSettingsError as e:
+            logger.warning(f'Missing settings for public conversation: {e}')
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'message': 'Missing required settings. Please configure LLM settings.',
+                    'error_type': 'missing_settings',
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        except LLMAuthenticationError as e:
+            logger.warning(f'LLM authentication error for public conversation: {e}')
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'message': 'LLM authentication failed. Please check API key.',
+                    'error_type': 'llm_auth_error',
+                },
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
 
     except Exception as e:
-        logger.error(f'Error creating public conversation: {e}')
+        logger.error(f'Error creating public conversation: {e}', exc_info=True)
         return JSONResponse(
             content={
                 'status': 'error',
-                'message': str(e),
+                'message': f'Failed to create conversation: {str(e)}',
+                'error_type': 'general_error',
             },
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

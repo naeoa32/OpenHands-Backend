@@ -2,9 +2,29 @@
 HF Spaces specific routes for debugging and status checking.
 """
 import os
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/api/hf", tags=["hf-spaces"])
+
+# Add a catch-all route for missing endpoints
+@router.get("/logs-container")
+async def logs_container():
+    """Handle logs-container requests that might be coming from HF Spaces UI."""
+    return JSONResponse({
+        "message": "Logs endpoint not implemented",
+        "status": "info",
+        "logs": []
+    })
+
+@router.get("/logs")
+async def logs():
+    """Handle logs requests."""
+    return JSONResponse({
+        "message": "Logs endpoint",
+        "status": "info", 
+        "logs": []
+    })
 
 
 @router.get("/status")
@@ -66,3 +86,72 @@ async def hf_environment():
             "cache_exists": os.path.exists(os.getenv("CACHE_DIR", "/tmp/cache")),
         }
     }
+
+@router.post("/test-conversation")
+async def test_conversation():
+    """Simple test endpoint for conversation creation without dependencies."""
+    try:
+        import uuid
+        conversation_id = uuid.uuid4().hex
+        return JSONResponse({
+            "status": "success",
+            "conversation_id": conversation_id,
+            "message": "Test conversation created successfully",
+            "test": True
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error", 
+                "message": f"Test conversation failed: {str(e)}",
+                "test": True
+            }
+        )
+
+@router.get("/debug")
+async def debug_info():
+    """Debug endpoint to check system status."""
+    try:
+        import sys
+        import platform
+        
+        return JSONResponse({
+            "system": {
+                "platform": platform.platform(),
+                "python_version": sys.version,
+                "python_path": sys.path[:3]
+            },
+            "environment": {
+                "runtime": os.getenv("OPENHANDS_RUNTIME", "not_set"),
+                "settings_store": os.getenv("SETTINGS_STORE_TYPE", "not_set"),
+                "secrets_store": os.getenv("SECRETS_STORE_TYPE", "not_set"),
+                "auth_disabled": os.getenv("OPENHANDS_DISABLE_AUTH", "not_set"),
+                "security_disabled": os.getenv("DISABLE_SECURITY", "not_set")
+            },
+            "directories": {
+                "file_store": {
+                    "path": os.getenv("FILE_STORE_PATH", "/tmp/openhands"),
+                    "exists": os.path.exists(os.getenv("FILE_STORE_PATH", "/tmp/openhands")),
+                    "writable": os.access(os.getenv("FILE_STORE_PATH", "/tmp/openhands"), os.W_OK) if os.path.exists(os.getenv("FILE_STORE_PATH", "/tmp/openhands")) else False
+                },
+                "workspace": {
+                    "path": os.getenv("WORKSPACE_BASE", "/tmp/workspace"),
+                    "exists": os.path.exists(os.getenv("WORKSPACE_BASE", "/tmp/workspace")),
+                    "writable": os.access(os.getenv("WORKSPACE_BASE", "/tmp/workspace"), os.W_OK) if os.path.exists(os.getenv("WORKSPACE_BASE", "/tmp/workspace")) else False
+                },
+                "cache": {
+                    "path": os.getenv("CACHE_DIR", "/tmp/cache"),
+                    "exists": os.path.exists(os.getenv("CACHE_DIR", "/tmp/cache")),
+                    "writable": os.access(os.getenv("CACHE_DIR", "/tmp/cache"), os.W_OK) if os.path.exists(os.getenv("CACHE_DIR", "/tmp/cache")) else False
+                }
+            }
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": f"Debug failed: {str(e)}",
+                "type": type(e).__name__
+            }
+        )

@@ -5,6 +5,15 @@ import os
 import secrets
 import tempfile
 import uvicorn
+import sys
+import logging
+
+# Configure logging for better debugging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Configure for Hugging Face Spaces BEFORE importing app
 def setup_hf_environment():
@@ -73,51 +82,63 @@ def setup_hf_environment():
 
 
 if __name__ == "__main__":
-    # Setup environment before importing anything
-    file_store_path, cache_dir = setup_hf_environment()
+    try:
+        # Setup environment before importing anything
+        logger.info("🔧 Setting up Hugging Face environment...")
+        file_store_path, cache_dir = setup_hf_environment()
 
-    # Now import the app after environment is configured
-    from openhands.server.app import app
+        # Now import the app after environment is configured
+        logger.info("📦 Importing OpenHands app...")
+        from openhands.server.app import app
 
-    # Hugging Face Spaces specific configuration
-    port = int(os.getenv("PORT", 7860))  # HF Spaces default port
-    host = "0.0.0.0"
+        # Hugging Face Spaces specific configuration
+        port = int(os.getenv("PORT", 7860))  # HF Spaces default port
+        host = "0.0.0.0"
 
-    print("🤗 Starting OpenHands Backend for Hugging Face Spaces")
-    print(f"🚀 Server will run on {host}:{port}")
-    print(f"🔧 Runtime: {os.getenv('OPENHANDS_RUNTIME')}")
-    print(f"🌐 CORS: {os.getenv('CORS_ALLOWED_ORIGINS')}")
-    print(f"📁 File Store: {file_store_path}")
-    print(f"💾 Cache Dir: {cache_dir}")
-    print(f"🔑 LLM API Key: {'✅ Set' if os.getenv('LLM_API_KEY') else '❌ Missing'}")
-    print(f"🔐 JWT Secret: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
-    print(f"🛡️ Security Disabled: {os.getenv('DISABLE_SECURITY')}")
-    print(f"🔓 Auth Disabled: {os.getenv('OPENHANDS_DISABLE_AUTH')}")
-    print("📡 API Endpoints:")
-    print("   GET  /health")
-    print("   GET  /api/options/config")
-    print("   GET  /api/hf/status")
-    print("   GET  /api/hf/ready")
-    print("   GET  /api/hf/environment")
-    print("   POST /api/conversations")
-    print("🌍 Ready for frontend integration!")
-    
-    # Debug environment
-    print("\n🔍 Debug Info:")
-    print(f"   LLM_MODEL: {os.getenv('LLM_MODEL', 'Not set')}")
-    print(f"   LLM_BASE_URL: {os.getenv('LLM_BASE_URL', 'Not set')}")
-    print(f"   DEFAULT_LLM_MODEL: {os.getenv('DEFAULT_LLM_MODEL', 'Not set')}")
-    print(f"   DEFAULT_LLM_BASE_URL: {os.getenv('DEFAULT_LLM_BASE_URL', 'Not set')}")
-    print(f"   OPENROUTER_API_KEY: {'✅ Set' if os.getenv('OPENROUTER_API_KEY') else '❌ Missing'}")
-    print(f"   WORKSPACE_BASE: {os.getenv('WORKSPACE_BASE', 'Not set')}")
-    print(f"   SETTINGS_STORE_TYPE: {os.getenv('SETTINGS_STORE_TYPE', 'file')}")
-    print(f"   SECRETS_STORE_TYPE: {os.getenv('SECRETS_STORE_TYPE', 'file')}")
-    print(f"   SKIP_SETTINGS_MODAL: {os.getenv('SKIP_SETTINGS_MODAL', 'false')}")
+        print("🤗 Starting OpenHands Backend for Hugging Face Spaces")
+        print(f"🚀 Server will run on {host}:{port}")
+        print(f"🔧 Runtime: {os.getenv('OPENHANDS_RUNTIME')}")
+        print(f"🌐 CORS: {os.getenv('CORS_ALLOWED_ORIGINS')}")
+        print(f"📁 File Store: {file_store_path}")
+        print(f"💾 Cache Dir: {cache_dir}")
+        print(f"🔑 LLM API Key: {'✅ Set' if os.getenv('LLM_API_KEY') else '❌ Missing'}")
+        print(f"🔐 JWT Secret: {'✅ Set' if os.getenv('JWT_SECRET') else '❌ Missing'}")
+        print(f"🛡️ Security Disabled: {os.getenv('DISABLE_SECURITY')}")
+        print(f"🔓 Auth Disabled: {os.getenv('OPENHANDS_DISABLE_AUTH')}")
+        print("📡 API Endpoints:")
+        print("   GET  / (root)")
+        print("   GET  /health")
+        print("   GET  /docs (API documentation)")
+        print("   GET  /api/options/config")
+        print("   GET  /api/hf/status")
+        print("   GET  /api/hf/ready")
+        print("   GET  /api/hf/environment")
+        print("   POST /api/conversations")
+        print("🌍 Ready for frontend integration!")
+        
+        # Debug environment
+        print("\n🔍 Debug Info:")
+        print(f"   Python Path: {sys.path[:3]}...")
+        print(f"   LLM_MODEL: {os.getenv('LLM_MODEL', 'Not set')}")
+        print(f"   LLM_BASE_URL: {os.getenv('LLM_BASE_URL', 'Not set')}")
+        print(f"   DEFAULT_LLM_MODEL: {os.getenv('DEFAULT_LLM_MODEL', 'Not set')}")
+        print(f"   DEFAULT_LLM_BASE_URL: {os.getenv('DEFAULT_LLM_BASE_URL', 'Not set')}")
+        print(f"   OPENROUTER_API_KEY: {'✅ Set' if os.getenv('OPENROUTER_API_KEY') else '❌ Missing'}")
+        print(f"   WORKSPACE_BASE: {os.getenv('WORKSPACE_BASE', 'Not set')}")
+        print(f"   SETTINGS_STORE_TYPE: {os.getenv('SETTINGS_STORE_TYPE', 'file')}")
+        print(f"   SECRETS_STORE_TYPE: {os.getenv('SECRETS_STORE_TYPE', 'file')}")
+        print(f"   SKIP_SETTINGS_MODAL: {os.getenv('SKIP_SETTINGS_MODAL', 'false')}")
 
-    uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        log_level="info",
-        access_log=True
-    )
+        logger.info("🚀 Starting uvicorn server...")
+        uvicorn.run(
+            app,
+            host=host,
+            port=port,
+            log_level="info",
+            access_log=True
+        )
+    except Exception as e:
+        logger.error(f"❌ Failed to start server: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
