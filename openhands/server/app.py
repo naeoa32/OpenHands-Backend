@@ -53,6 +53,41 @@ try:
 except ImportError:
     SIMPLE_CONVERSATION_AVAILABLE = False
 
+# Import test chat routes (ultra-simple)
+try:
+    from openhands.server.routes.test_chat import router as test_chat_router
+    TEST_CHAT_AVAILABLE = True
+except ImportError:
+    TEST_CHAT_AVAILABLE = False
+
+# Import OpenRouter test routes
+try:
+    from openhands.server.routes.openrouter_test import router as openrouter_test_router
+    OPENROUTER_TEST_AVAILABLE = True
+except ImportError:
+    OPENROUTER_TEST_AVAILABLE = False
+
+# Import memory conversation routes (no file dependencies)
+try:
+    from openhands.server.routes.memory_conversation import router as memory_conversation_router
+    MEMORY_CONVERSATION_AVAILABLE = True
+except ImportError:
+    MEMORY_CONVERSATION_AVAILABLE = False
+
+# Import OpenRouter chat routes (real chat with OpenRouter API)
+try:
+    from openhands.server.routes.openrouter_chat import router as openrouter_chat_router
+    OPENROUTER_CHAT_AVAILABLE = True
+except ImportError:
+    OPENROUTER_CHAT_AVAILABLE = False
+
+# Import Novel Writing routes (Indonesian creative writing)
+try:
+    from openhands.server.routes.novel_writing import router as novel_writing_router
+    NOVEL_WRITING_AVAILABLE = True
+except ImportError:
+    NOVEL_WRITING_AVAILABLE = False
+
 mcp_app = mcp_server.http_app(path='/mcp')
 
 
@@ -106,8 +141,16 @@ async def root():
             "api_models": "/api/options/models",
             "api_agents": "/api/options/agents",
             "conversations": "/api/conversations",
-            "simple_conversations": "/api/conversations/simple",
-            "test_chat": "/test-chat",
+            "simple_conversations": "/api/simple/conversation",
+            "test_chat": "/test-chat/message",
+            "openrouter_test": "/openrouter/test",
+            "openrouter_health": "/openrouter/health",
+            "memory_chat": "/memory-chat/message",
+            "memory_chat_health": "/memory-chat/health",
+            "real_chat": "/chat/message",
+            "chat_health": "/chat/health",
+            "novel_writing": "/novel/write",
+            "novel_health": "/novel/health",
             "hf_status": "/api/hf/status",
             "hf_ready": "/api/hf/ready",
             "hf_environment": "/api/hf/environment"
@@ -210,5 +253,40 @@ if SIMPLE_CONVERSATION_AVAILABLE:
     logger.info("✅ Simple conversation routes included")
 else:
     logger.warning("⚠️ Simple conversation routes not available")
+
+# Add test chat routes if available
+if TEST_CHAT_AVAILABLE:
+    app.include_router(test_chat_router)
+    logger.info("✅ Test chat routes included")
+else:
+    logger.warning("⚠️ Test chat routes not available")
+
+# Add OpenRouter test routes if available
+if OPENROUTER_TEST_AVAILABLE:
+    app.include_router(openrouter_test_router)
+    logger.info("✅ OpenRouter test routes included")
+else:
+    logger.warning("⚠️ OpenRouter test routes not available")
+
+# Add memory conversation routes if available
+if MEMORY_CONVERSATION_AVAILABLE:
+    app.include_router(memory_conversation_router)
+    logger.info("✅ Memory conversation routes included")
+else:
+    logger.warning("⚠️ Memory conversation routes not available")
+
+# Add OpenRouter chat routes if available
+if OPENROUTER_CHAT_AVAILABLE:
+    app.include_router(openrouter_chat_router)
+    logger.info("✅ OpenRouter chat routes included")
+else:
+    logger.warning("⚠️ OpenRouter chat routes not available")
+
+# Add Novel Writing routes if available
+if NOVEL_WRITING_AVAILABLE:
+    app.include_router(novel_writing_router)
+    logger.info("✅ Novel writing routes included")
+else:
+    logger.warning("⚠️ Novel writing routes not available")
 
 add_health_endpoints(app)
