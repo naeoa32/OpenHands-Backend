@@ -28,12 +28,20 @@ from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.runtime.impl.docker.docker_runtime import (
-    APP_PORT_RANGE_1,
-    APP_PORT_RANGE_2,
-    EXECUTION_SERVER_PORT_RANGE,
-    VSCODE_PORT_RANGE,
-)
+# HF Spaces compatible import with fallback
+try:
+    from openhands.runtime.impl.docker.docker_runtime import (
+        APP_PORT_RANGE_1,
+        APP_PORT_RANGE_2,
+        EXECUTION_SERVER_PORT_RANGE,
+        VSCODE_PORT_RANGE,
+    )
+except ImportError:
+    # Fallback port ranges when docker is not available
+    APP_PORT_RANGE_1 = (8000, 8100)
+    APP_PORT_RANGE_2 = (8100, 8200)
+    EXECUTION_SERVER_PORT_RANGE = (7000, 7100)
+    VSCODE_PORT_RANGE = (5000, 5100)
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port

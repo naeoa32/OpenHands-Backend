@@ -3,7 +3,14 @@ import re
 import uuid
 from typing import Any, cast
 
-import docker
+# HF Spaces compatible import
+try:
+    import docker
+    DOCKER_AVAILABLE = True
+except ImportError:
+    # Fallback when docker is not available
+    docker = None
+    DOCKER_AVAILABLE = False
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
@@ -57,6 +64,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
             self.sid = str(uuid.uuid4())
 
         try:
+            if not DOCKER_AVAILABLE:
+                raise ImportError("Docker not available in this environment")
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
