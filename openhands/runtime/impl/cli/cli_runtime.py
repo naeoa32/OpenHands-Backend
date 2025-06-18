@@ -16,11 +16,104 @@ from pathlib import Path
 from typing import Any, Callable
 
 from binaryornot.check import is_binary
-from openhands_aci.editor.editor import OHEditor
-from openhands_aci.editor.exceptions import ToolError
-from openhands_aci.editor.results import ToolResult
-from openhands_aci.utils.diff import get_diff
 from pydantic import SecretStr
+
+# Conditional imports for openhands_aci with fallbacks
+try:
+    from openhands_aci.editor.editor import OHEditor
+    from openhands_aci.editor.exceptions import ToolError
+    from openhands_aci.editor.results import ToolResult
+    from openhands_aci.utils.diff import get_diff
+except ImportError:
+    # Fallback implementations for HF Spaces
+    import difflib
+    from typing import Optional, Dict, Any
+    
+    class ToolError(Exception):
+        """Fallback ToolError exception."""
+        pass
+    
+    class ToolResult:
+        """Fallback ToolResult class."""
+        def __init__(self, output: str = "", error: str = "", exit_code: int = 0):
+            self.output = output
+            self.error = error
+            self.exit_code = exit_code
+    
+    def get_diff(old_content: str, new_content: str) -> str:
+        """Fallback diff implementation."""
+        diff = list(difflib.unified_diff(
+            old_content.splitlines(keepends=True),
+            new_content.splitlines(keepends=True),
+            fromfile='old',
+            tofile='new'
+        ))
+        return ''.join(diff)
+    
+    class OHEditor:
+        """Fallback OHEditor implementation for HF Spaces."""
+        def __init__(self, *args, **kwargs):
+            pass
+        
+        def view(self, path: str, view_range: Optional[list] = None) -> ToolResult:
+            """View file content."""
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                if view_range:
+                    lines = content.splitlines()
+                    start, end = view_range[0] - 1, view_range[1] if view_range[1] != -1 else len(lines)
+                    content = '\n'.join(f"{i+start+1:6}|{line}" for i, line in enumerate(lines[start:end]))
+                else:
+                    lines = content.splitlines()
+                    content = '\n'.join(f"{i+1:6}|{line}" for i, line in enumerate(lines))
+                
+                return ToolResult(output=content)
+            except Exception as e:
+                return ToolResult(error=str(e), exit_code=1)
+        
+        def create(self, path: str, file_text: str) -> ToolResult:
+            """Create new file."""
+            try:
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(file_text)
+                return ToolResult(output=f"File created: {path}")
+            except Exception as e:
+                return ToolResult(error=str(e), exit_code=1)
+        
+        def str_replace(self, path: str, old_str: str, new_str: str) -> ToolResult:
+            """Replace string in file."""
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                if old_str not in content:
+                    return ToolResult(error=f"String not found: {old_str}", exit_code=1)
+                
+                new_content = content.replace(old_str, new_str)
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+                
+                return ToolResult(output=f"String replaced in {path}")
+            except Exception as e:
+                return ToolResult(error=str(e), exit_code=1)
+        
+        def insert(self, path: str, insert_line: int, new_str: str) -> ToolResult:
+            """Insert text at specific line."""
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                
+                lines.insert(insert_line, new_str + '\n')
+                
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.writelines(lines)
+                
+                return ToolResult(output=f"Text inserted at line {insert_line} in {path}")
+            except Exception as e:
+                return ToolResult(error=str(e), exit_code=1)
 
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
