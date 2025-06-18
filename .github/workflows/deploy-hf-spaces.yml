@@ -1,0 +1,196 @@
+name: 🚀 Deploy to HuggingFace Spaces (Novel Writing + OpenRouter)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+    types: [closed]
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      force_deploy:
+        description: 'Force deployment'
+        required: false
+        default: 'false'
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true) || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        lfs: true
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install huggingface_hub requests
+
+    - name: 🧪 Test Novel Writing Features
+      run: |
+        pip install -r requirements.txt
+        python -c "
+        import sys
+        sys.path.append('.')
+        
+        # Test novel writing imports
+        try:
+            from openhands.core.novel_writing_prompts import create_novel_writing_prompt, get_novel_writing_questions
+            from openhands.core.novel_writing_config import create_novel_writing_llm_config, should_use_premium_model
+            from openhands.server.routes.novel_writing import router as novel_router
+            print('✅ Novel writing imports successful')
+        except Exception as e:
+            print(f'❌ Novel writing import error: {e}')
+            sys.exit(1)
+            
+        # Test novel writing functionality
+        try:
+            prompt = create_novel_writing_prompt('character-development', 'Test prompt')
+            questions = get_novel_writing_questions('character-development')
+            use_premium = should_use_premium_model('character-development', 1000)
+            
+            print(f'✅ Novel prompt: {len(prompt)} chars')
+            print(f'✅ Questions: {len(questions)} items')
+            print(f'✅ Model selection: {\"Premium\" if use_premium else \"Budget\"}')
+        except Exception as e:
+            print(f'❌ Novel writing test failed: {e}')
+            sys.exit(1)
+            
+        print('🎭 Novel writing features working!')
+        "
+
+    - name: Deploy to HuggingFace Spaces
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_USERNAME: Minatoz997
+        HF_SPACE_NAME: Backend66
+      run: |
+        python << 'EOF'
+        import os
+        from huggingface_hub import HfApi, upload_folder
+        
+        # Initialize HF API
+        api = HfApi(token=os.environ['HF_TOKEN'])
+        
+        # Upload entire repository to HF Spaces
+        try:
+            api.upload_folder(
+                folder_path=".",
+                repo_id=f"{os.environ['HF_USERNAME']}/{os.environ['HF_SPACE_NAME']}",
+                repo_type="space",
+                ignore_patterns=[".git", ".github", "__pycache__", "*.pyc", ".env"],
+                commit_message="🎭 Auto-deploy: Complete OpenRouter + Indonesian Novel Writing Integration"
+            )
+            print("✅ Successfully deployed to HuggingFace Spaces!")
+        except Exception as e:
+            print(f"❌ Deployment failed: {e}")
+            exit(1)
+        EOF
+
+    - name: Restart HuggingFace Space
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_USERNAME: Minatoz997
+        HF_SPACE_NAME: Backend66
+      run: |
+        python << 'EOF'
+        import os
+        import requests
+        
+        # Restart the space
+        try:
+            response = requests.post(
+                f"https://huggingface.co/api/spaces/{os.environ['HF_USERNAME']}/{os.environ['HF_SPACE_NAME']}/restart",
+                headers={"Authorization": f"Bearer {os.environ['HF_TOKEN']}"}
+            )
+            if response.status_code == 200:
+                print("✅ Space restarted successfully!")
+            else:
+                print(f"⚠️ Restart response: {response.status_code}")
+        except Exception as e:
+            print(f"⚠️ Restart failed: {e}")
+        EOF
+
+    - name: Wait for deployment
+      run: |
+        echo "🕐 Waiting for space to be ready..."
+        sleep 30
+        
+    - name: Test deployment
+      env:
+        HF_USERNAME: Minatoz997
+        HF_SPACE_NAME: Backend66
+      run: |
+        python << 'EOF'
+        import requests
+        import time
+        
+        space_url = f"https://{os.environ['HF_USERNAME']}-{os.environ['HF_SPACE_NAME']}.hf.space"
+        
+        # Test endpoints including novel writing
+        endpoints_to_test = [
+            "/",
+            "/health", 
+            "/novel/",
+            "/novel/health",
+            "/novel/templates",
+            "/chat/health",
+            "/openrouter/health",
+            "/memory-chat/health"
+        ]
+        
+        print(f"🧪 Testing deployment at: {space_url}")
+        
+        for endpoint in endpoints_to_test:
+            try:
+                response = requests.get(f"{space_url}{endpoint}", timeout=10)
+                status = "✅" if response.status_code == 200 else "❌"
+                print(f"{status} {endpoint} - Status: {response.status_code}")
+            except Exception as e:
+                print(f"❌ {endpoint} - Error: {e}")
+        
+        print("🎉 Deployment test completed!")
+        print(f"🌐 Space URL: {space_url}")
+        print(f"📚 API Docs: {space_url}/docs")
+        print(f"🎭 Novel Writing: {space_url}/novel/")
+        print(f"🤖 Chat API: {space_url}/chat/")
+        EOF
+
+    - name: 📝 Create Deployment Summary
+      if: always()
+      run: |
+        echo "## 🎭 Novel Writing + OpenRouter Deployment" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Deployment Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Repository**: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Space**: https://huggingface.co/spaces/Minatoz997/Backend66" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🌐 Live URLs" >> $GITHUB_STEP_SUMMARY
+        echo "- **Main API**: https://minatoz997-backend66.hf.space" >> $GITHUB_STEP_SUMMARY
+        echo "- **API Docs**: https://minatoz997-backend66.hf.space/docs" >> $GITHUB_STEP_SUMMARY
+        echo "- **Novel Writing**: https://minatoz997-backend66.hf.space/novel/" >> $GITHUB_STEP_SUMMARY
+        echo "- **Chat API**: https://minatoz997-backend66.hf.space/chat/" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🎭 Novel Writing Features" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Indonesian Creative Writing Assistant" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ 7 Specialized Templates" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Intelligent Model Selection (Budget/Premium)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Session Management" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Template-specific Questions" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🤖 Chat Features" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ OpenRouter Integration" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Multiple AI Models" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Memory-based Conversations" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Real-time AI Responses" >> $GITHUB_STEP_SUMMARY
