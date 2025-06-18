@@ -81,6 +81,13 @@ try:
 except ImportError:
     OPENROUTER_CHAT_AVAILABLE = False
 
+# Import Novel Writing routes (Indonesian creative writing)
+try:
+    from openhands.server.routes.novel_writing import router as novel_writing_router
+    NOVEL_WRITING_AVAILABLE = True
+except ImportError:
+    NOVEL_WRITING_AVAILABLE = False
+
 mcp_app = mcp_server.http_app(path='/mcp')
 
 
@@ -142,6 +149,8 @@ async def root():
             "memory_chat_health": "/memory-chat/health",
             "real_chat": "/chat/message",
             "chat_health": "/chat/health",
+            "novel_writing": "/novel/write",
+            "novel_health": "/novel/health",
             "hf_status": "/api/hf/status",
             "hf_ready": "/api/hf/ready",
             "hf_environment": "/api/hf/environment"
@@ -272,5 +281,12 @@ if OPENROUTER_CHAT_AVAILABLE:
     logger.info("✅ OpenRouter chat routes included")
 else:
     logger.warning("⚠️ OpenRouter chat routes not available")
+
+# Add Novel Writing routes if available
+if NOVEL_WRITING_AVAILABLE:
+    app.include_router(novel_writing_router)
+    logger.info("✅ Novel writing routes included")
+else:
+    logger.warning("⚠️ Novel writing routes not available")
 
 add_health_endpoints(app)

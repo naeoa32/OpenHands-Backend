@@ -52,6 +52,8 @@ def test_endpoints():
         "/memory-chat/health",
         "/chat/",
         "/chat/health",
+        "/novel/",
+        "/novel/health",
         "/docs",
         "/openapi.json"
     ]
@@ -162,6 +164,28 @@ def test_endpoints():
             print(f"   Expected: {data.get('message', 'API key required')}")
     except Exception as e:
         print(f"❌ POST /chat/message failed: {e}")
+    
+    # Test novel writing endpoint (Indonesian creative writing)
+    try:
+        test_data = {
+            "message": "Saya ingin mengembangkan karakter protagonis untuk novel saya",
+            "template": "character-development",
+            "original_prompt": "Bantuan karakter novel"
+        }
+        response = requests.post(f"{base_url}/novel/write", json=test_data, timeout=10)
+        status = "✅" if response.status_code in [200, 400] else "❌"
+        print(f"{status} POST /novel/write - Status: {response.status_code}")
+        if response.status_code == 200:
+            data = response.json()
+            print(f"   Novel session ID: {data.get('session_id', 'None')}")
+            print(f"   Template used: {data.get('template_used', 'None')}")
+            print(f"   Model: {data.get('model_info', {}).get('name', 'None')}")
+            print(f"   Response preview: {data.get('response', '')[:100]}...")
+        elif response.status_code == 400:
+            data = response.json()
+            print(f"   Expected: {data.get('message', 'API key required')}")
+    except Exception as e:
+        print(f"❌ POST /novel/write failed: {e}")
     
     # Test public conversations endpoint with minimal data
     try:
