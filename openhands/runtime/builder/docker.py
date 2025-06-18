@@ -3,7 +3,14 @@ import os
 import subprocess
 import time
 
-import docker
+# HF Spaces compatible import
+try:
+    import docker
+    DOCKER_AVAILABLE = True
+except ImportError:
+    # Fallback when docker is not available
+    docker = None
+    DOCKER_AVAILABLE = False
 
 from openhands import __version__ as oh_version
 from openhands.core.exceptions import AgentRuntimeBuildError
@@ -14,7 +21,7 @@ from openhands.utils.term_color import TermColor, colorize
 
 
 class DockerRuntimeBuilder(RuntimeBuilder):
-    def __init__(self, docker_client: docker.DockerClient):
+    def __init__(self, docker_client):
         self.docker_client = docker_client
 
         version_info = self.docker_client.version()
