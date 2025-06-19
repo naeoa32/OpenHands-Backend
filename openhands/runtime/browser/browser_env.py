@@ -4,11 +4,21 @@ import multiprocessing
 import time
 import uuid
 
-import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
-import gymnasium as gym
+try:
+    import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
+    import gymnasium as gym
+    from browsergym.utils.obs import flatten_dom_to_str, overlay_som
+    BROWSERGYM_AVAILABLE = True
+except ImportError:
+    BROWSERGYM_AVAILABLE = False
+    # Fallback functions for when browsergym is not available
+    def flatten_dom_to_str(*args, **kwargs):
+        return "BrowserGym not available"
+    def overlay_som(*args, **kwargs):
+        return None
+
 import html2text
 import tenacity
-from browsergym.utils.obs import flatten_dom_to_str, overlay_som
 
 from openhands.core.exceptions import BrowserInitException
 from openhands.core.logger import openhands_logger as logger
@@ -28,14 +38,19 @@ class BrowserEnv:
 
         # EVAL only: browsergym_eval_env must be provided for evaluation
         self.browsergym_eval_env = browsergym_eval_env
-        self.eval_mode = bool(browsergym_eval_env)
+        self.eval_mode = bool(browsergym_eval_env) and BROWSERGYM_AVAILABLE
+        
+        if browsergym_eval_env and not BROWSERGYM_AVAILABLE:
+            logger.warning("BrowserGym evaluation requested but browsergym not available. Disabling eval mode.")
 
-        # Initialize browser environment process
-        multiprocessing.set_start_method('spawn', force=True)
-        self.browser_side, self.agent_side = multiprocessing.Pipe()
-
-        self.init_browser()
-        atexit.register(self.close)
+        # Initialize browser environment process only if browsergym is available
+        if BROWSERGYM_AVAILABLE:
+            multiprocessing.set_start_method('spawn', force=True)
+            self.browser_side, self.agent_side = multiprocessing.Pipe()
+            self.init_browser()
+            atexit.register(self.close)
+        else:
+            logger.warning("BrowserGym not available. Browser functionality disabled.")
 
     def get_html_text_converter(self) -> html2text.HTML2Text:
         html_text_converter = html2text.HTML2Text()
@@ -67,34 +82,45 @@ class BrowserEnv:
             raise BrowserInitException('Failed to start browser environment.')
 
     def browser_process(self) -> None:
+        if not BROWSERGYM_AVAILABLE:
+            logger.error("BrowserGym not available. Cannot start browser process.")
+            return
+            
         if self.eval_mode:
             assert self.browsergym_eval_env is not None
             logger.info('Initializing browser env for web browsing evaluation.')
             if not self.browsergym_eval_env.startswith('browsergym/'):
                 self.browsergym_eval_env = 'browsergym/' + self.browsergym_eval_env
-            if 'visualwebarena' in self.browsergym_eval_env:
-                import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
-                import nltk
-
-                nltk.download('punkt_tab')
-            elif 'webarena' in self.browsergym_eval_env:
-                import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
-            elif 'miniwob' in self.browsergym_eval_env:
-                import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
-            else:
-                raise ValueError(
-                    f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
-                )
-            env = gym.make(self.browsergym_eval_env, tags_to_mark='all', timeout=100000)
+            try:
+                if 'visualwebarena' in self.browsergym_eval_env:
+                    import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
+                    import nltk
+                    nltk.download('punkt_tab')
+                elif 'webarena' in self.browsergym_eval_env:
+                    import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
+                elif 'miniwob' in self.browsergym_eval_env:
+                    import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
+                else:
+                    raise ValueError(
+                        f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
+                    )
+                env = gym.make(self.browsergym_eval_env, tags_to_mark='all', timeout=100000)
+            except ImportError as e:
+                logger.error(f"Failed to import browsergym environment: {e}")
+                return
         else:
-            env = gym.make(
-                'browsergym/openended',
-                task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
-                wait_for_user_message=False,
-                headless=True,
-                disable_env_checker=True,
-                tags_to_mark='all',
-            )
+            try:
+                env = gym.make(
+                    'browsergym/openended',
+                    task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
+                    wait_for_user_message=False,
+                    headless=True,
+                    disable_env_checker=True,
+                    tags_to_mark='all',
+                )
+            except Exception as e:
+                logger.error(f"Failed to create browsergym environment: {e}")
+                return
         obs, info = env.reset()
 
         logger.info('Successfully called env.reset')

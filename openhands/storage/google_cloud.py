@@ -1,4 +1,6 @@
 # HF Spaces compatibility patch
+# Google Cloud is COMPLETELY OPTIONAL - no login required, no API key needed!
+# This file only provides Google Cloud storage option if user wants it
 import os
 
 try:
@@ -9,9 +11,10 @@ try:
     from google.cloud.storage.client import Client
     GOOGLE_CLOUD_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️  Google Cloud dependencies not available: {e}")
+    print(f"✅ Google Cloud dependencies not available (PERFECTLY FINE): {e}")
+    print("📝 No Google login/API key required - using memory storage instead")
     GOOGLE_CLOUD_AVAILABLE = False
-    # Create dummy classes
+    # Create dummy classes for compatibility
     class NotFound(Exception):
         pass
     class Blob:

@@ -93,11 +93,13 @@ def check_dependencies():
     except ImportError:
         logger.info("✅ Docker not available (expected for HF Spaces)")
     
+    # Google Cloud is COMPLETELY OPTIONAL - no login required, no API key needed
+    # This is just for informational purposes only
     try:
         import google.api_core
-        logger.info("⚠️  Google Cloud available (not needed for basic functionality)")
+        logger.info("⚠️  Google Cloud available (OPTIONAL - not needed for basic functionality)")
     except ImportError:
-        logger.info("✅ Google Cloud not available (expected for HF Spaces)")
+        logger.info("✅ Google Cloud not available (PERFECTLY FINE - no login/API key required)")
     
     if missing_deps:
         logger.error(f"❌ Missing critical dependencies: {missing_deps}")
