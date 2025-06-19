@@ -83,7 +83,7 @@ async def create_new_conversation(
             language='en',
             agent=os.getenv('DEFAULT_AGENT', 'CodeActAgent'),
             max_iterations=100,
-            llm_model=os.getenv('LLM_MODEL', 'minimax/minimax-m1'),
+            llm_model=os.getenv('LLM_MODEL', 'anthropic/claude-3.5-sonnet'),
             llm_api_key=SecretStr(api_key),
             llm_base_url=os.getenv('LLM_BASE_URL', 'https://openrouter.ai/api/v1'),
             confirmation_mode=False,
