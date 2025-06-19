@@ -44,6 +44,7 @@ async def chat_info():
         "active_conversations": len(CHAT_CONVERSATIONS),
         "supported_models": [
             "anthropic/claude-3.5-sonnet",
+            "google/gemini-2.0-flash-exp",
             "openai/gpt-4o-mini",
             "openai/gpt-4o",
             "anthropic/claude-3-haiku",
@@ -288,6 +289,12 @@ async def get_chat_models():
                 "name": "Claude 3.5 Sonnet",
                 "description": "Anthropic's most capable model for natural conversations",
                 "recommended": True
+            },
+            {
+                "id": "google/gemini-2.0-flash-exp",
+                "name": "Gemini 2.0 Flash",
+                "description": "Google's latest experimental model - excellent for creative writing",
+                "recommended_for": "novel_writing"
             },
             {
                 "id": "openai/gpt-4o-mini",
