@@ -44,13 +44,13 @@ except ImportError:
             self.old_content = old_content
             self.new_content = new_content
     
-    def get_diff(old_content: str, new_content: str) -> str:
+    def get_diff(old_contents: str, new_contents: str, filepath: str = 'file') -> str:
         """Fallback diff implementation."""
         diff = list(difflib.unified_diff(
-            old_content.splitlines(keepends=True),
-            new_content.splitlines(keepends=True),
-            fromfile='old',
-            tofile='new'
+            old_contents.splitlines(keepends=True),
+            new_contents.splitlines(keepends=True),
+            fromfile=f'{filepath} (old)',
+            tofile=f'{filepath} (new)'
         ))
         return ''.join(diff)
     
