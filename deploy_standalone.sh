@@ -31,8 +31,14 @@ print_error() {
 
 # Check if required arguments are provided
 if [ $# -lt 2 ]; then
-    print_error "Usage: $0 <space-name> <hf-token>"
+    print_error "Usage: $0 <space-name> <hf-token> [github-repo] [branch]"
     echo "Example: $0 Minatoz997/Backend66 hf_xxxxxxxxxxxx"
+    echo "Example: $0 Minatoz997/Backend66 hf_xxxxxxxxxxxx Minatoz997/Backendkugy main"
+    echo ""
+    echo "Available repos:"
+    echo "  - Minatoz997/Backend (default)"
+    echo "  - Minatoz997/Backendkugy"
+    echo "  - Minatoz997/Huggingface-kugy"
     echo ""
     echo "Get your HF token from: https://huggingface.co/settings/tokens"
     exit 1
@@ -40,9 +46,9 @@ fi
 
 SPACE_NAME="$1"
 HF_TOKEN="$2"
+GITHUB_REPO="${3:-Minatoz997/Backend}"  # Default to Backend repo
+GITHUB_BRANCH="${4:-main}"              # Default to main branch
 TEMP_DIR=$(mktemp -d)
-GITHUB_REPO="RenoirArena/OpenHands-Backend"
-GITHUB_BRANCH="explain-personal-token"
 
 # Essential files to download and deploy
 ESSENTIAL_FILES=(
