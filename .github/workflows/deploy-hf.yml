@@ -1,0 +1,64 @@
+name: 🚀 Deploy to Hugging Face Spaces
+
+on:
+  workflow_dispatch:
+    inputs:
+      space_name:
+        description: 'HF Space name (username/space-name)'
+        required: true
+        type: string
+      clean_deploy:
+        description: 'Clean deploy (remove all files first)'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: 📦 Install dependencies
+      run: |
+        pip install huggingface_hub
+        
+    - name: 🧹 Clean deploy to HF Spaces
+      if: ${{ inputs.clean_deploy }}
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: |
+        python deploy_to_hf.py --space-name "${{ inputs.space_name }}"
+        
+    - name: 📤 Regular deploy to HF Spaces  
+      if: ${{ !inputs.clean_deploy }}
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: |
+        # Install huggingface_hub CLI
+        pip install --upgrade huggingface_hub[cli]
+        
+        # Upload files
+        huggingface-cli upload ${{ inputs.space_name }} app.py --repo-type=space
+        huggingface-cli upload ${{ inputs.space_name }} requirements.txt --repo-type=space
+        huggingface-cli upload ${{ inputs.space_name }} Dockerfile --repo-type=space
+        huggingface-cli upload ${{ inputs.space_name }} README.md --repo-type=space
+        huggingface-cli upload ${{ inputs.space_name }} PERSONAL_TOKEN_GUIDE.md --repo-type=space
+        huggingface-cli upload ${{ inputs.space_name }} openhands/ --repo-type=space
+        huggingface-cli upload ${{ inputs.space_name }} microagents/ --repo-type=space
+        
+    - name: ✅ Deployment complete
+      run: |
+        echo "🎉 Deployment successful!"
+        echo "🌐 Your space: https://huggingface.co/spaces/${{ inputs.space_name }}"
+        echo "⏱️  Build will start automatically (5-10 minutes)"
+        echo "🔧 Don't forget to set environment variables in HF Spaces settings:"
+        echo "   - LLM_API_KEY=your_openrouter_key"
+        echo "   - PERSONAL_ACCESS_TOKEN=your_password"
