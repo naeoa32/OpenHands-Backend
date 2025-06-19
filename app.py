@@ -46,9 +46,15 @@ def setup_hf_environment():
     os.environ.setdefault("DEFAULT_AGENT", "CodeActAgent")
     
     # LLM configuration - use OpenRouter by default
-    if not os.getenv("LLM_API_KEY"):
-        logger.warning("⚠️  LLM_API_KEY not set. Please set it in HF Spaces environment variables.")
-    os.environ.setdefault("LLM_MODEL", "openrouter/anthropic/claude-3-haiku-20240307")
+    api_key = os.getenv("LLM_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        logger.warning("⚠️  LLM_API_KEY or OPENROUTER_API_KEY not set. Please set it in HF Spaces environment variables.")
+        logger.warning("⚠️  Without API key, the backend will start but LLM calls will fail.")
+    else:
+        logger.info("✅ LLM API key found")
+    
+    # Fixed model name format for OpenRouter (remove openrouter/ prefix)
+    os.environ.setdefault("LLM_MODEL", "anthropic/claude-3-haiku-20240307")
     os.environ.setdefault("LLM_BASE_URL", "https://openrouter.ai/api/v1")
     
     # Create directories if they don't exist
