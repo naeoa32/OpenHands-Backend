@@ -6,6 +6,7 @@ fastapi>=0.104.0,<0.115.0
 uvicorn[standard]>=0.24.0,<0.32.0
 python-multipart>=0.0.6
 python-dotenv>=1.0.0
+python-socketio==5.13.0
 
 # ===== LLM Provider (LiteLLM for OpenRouter) =====
 litellm>=1.60.0,<1.70.0
@@ -27,6 +28,9 @@ dirhash>=0.2.1
 tornado>=6.3.0
 rapidfuzz>=3.9.0,<4.0.0
 whatthepatch>=1.0.6
+fastmcp==2.6.1
+boto3>=1.35.0,<2.0.0
+docker>=7.0.0,<8.0.0
 
 # ===== System Utilities =====
 psutil>=5.9.0
