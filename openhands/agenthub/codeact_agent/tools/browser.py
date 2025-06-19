@@ -1,14 +1,26 @@
-from browsergym.core.action.highlevel import HighLevelActionSet
+try:
+    from browsergym.core.action.highlevel import HighLevelActionSet
+    BROWSERGYM_AVAILABLE = True
+except ImportError:
+    BROWSERGYM_AVAILABLE = False
+    # Dummy HighLevelActionSet for compatibility
+    class HighLevelActionSet:
+        def __init__(self, *args, **kwargs):
+            pass
+
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 from openhands.llm.tool_names import BROWSER_TOOL_NAME
 
 # from browsergym/core/action/highlevel.py
-_browser_action_space = HighLevelActionSet(
-    subsets=['bid', 'nav'],
-    strict=False,  # less strict on the parsing of the actions
-    multiaction=True,  # enable to agent to take multiple actions at once
-)
+if BROWSERGYM_AVAILABLE:
+    _browser_action_space = HighLevelActionSet(
+        subsets=['bid', 'nav'],
+        strict=False,  # less strict on the parsing of the actions
+        multiaction=True,  # enable to agent to take multiple actions at once
+    )
+else:
+    _browser_action_space = None
 
 
 _BROWSER_DESCRIPTION = """Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.
