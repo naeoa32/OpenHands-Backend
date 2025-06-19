@@ -139,7 +139,7 @@ if __name__ == "__main__":
     except ImportError as e:
         logger.error(f"❌ Import error: {e}")
         logger.error("💡 This usually means a required dependency is missing.")
-        logger.error("💡 Check that all dependencies in requirements_hf_fixed.txt are installed.")
+        logger.error("💡 Check that all dependencies in requirements.txt are installed.")
         import traceback
         traceback.print_exc()
         sys.exit(1)
