@@ -36,9 +36,9 @@ if [ $# -lt 2 ]; then
     echo "Example: $0 Minatoz997/Backend66 hf_xxxxxxxxxxxx Minatoz997/Backendkugy main"
     echo ""
     echo "Available repos:"
-    echo "  - Minatoz997/Backend (default)"
+    echo "  - Minatoz997/OpenHands-Backend (default)"
+    echo "  - Minatoz997/Backend"
     echo "  - Minatoz997/Backendkugy"
-    echo "  - Minatoz997/Huggingface-kugy"
     echo ""
     echo "Get your HF token from: https://huggingface.co/settings/tokens"
     exit 1
@@ -46,7 +46,7 @@ fi
 
 SPACE_NAME="$1"
 HF_TOKEN="$2"
-GITHUB_REPO="${3:-Minatoz997/Backend}"  # Default to Backend repo
+GITHUB_REPO="${3:-Minatoz997/OpenHands-Backend}"  # Default to main OpenHands-Backend repo
 GITHUB_BRANCH="${4:-main}"              # Default to main branch
 TEMP_DIR=$(mktemp -d)
 
