@@ -11,8 +11,8 @@ class NovelWritingConfig:
     """Configuration for Novel Writing Mode"""
     
     # Model selection based on budget
-    budget_model: str = "openrouter/anthropic/claude-3-haiku-20240307"  # Claude 3.5 Haiku for budget
-    premium_model: str = "openrouter/anthropic/claude-3-opus-20240229"  # Claude 3 Opus for premium
+    budget_model: str = "anthropic/claude-3-haiku-20240307"  # Claude 3.5 Haiku for budget
+    premium_model: str = "anthropic/claude-3-opus-20240229"  # Claude 3 Opus for premium
     
     # Optimal parameters for creative writing
     temperature: float = 0.8

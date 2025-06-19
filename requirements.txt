@@ -1,64 +1,73 @@
-# Personal OpenHands Backend - Minimal Requirements for HF Spaces
-# Optimized for stability and fast deployment
+# OpenHands Backend - Optimized for Hugging Face Spaces
+# Minimal dependencies for stable deployment
 
 # ===== Core FastAPI and Server =====
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-python-multipart
-python-dotenv
+fastapi>=0.104.0,<0.115.0
+uvicorn[standard]>=0.24.0,<0.32.0
+python-multipart>=0.0.6
+python-dotenv>=1.0.0
 
-# ===== LLM Provider (OpenRouter Only) =====
-litellm>=1.60.0
-aiohttp>=3.9.0
+# ===== LLM Provider (LiteLLM for OpenRouter) =====
+litellm>=1.60.0,<1.70.0
+aiohttp>=3.9.0,<3.12.0
+httpx>=0.25.0
 
 # ===== Core OpenHands Dependencies =====
-termcolor
-toml
-numpy
-json-repair
-html2text
-pexpect
-jinja2>=3.1.3
+termcolor>=2.3.0
+toml>=0.10.2
+numpy>=1.24.0,<2.0.0
+json-repair>=0.25.0
+html2text>=2020.1.16
+pexpect>=4.8.0
+jinja2>=3.1.3,<4.0.0
 tenacity>=8.5,<10.0
 pathspec>=0.12.1
 pyjwt>=2.9.0
-dirhash
-tornado
-rapidfuzz>=3.9.0
+dirhash>=0.2.1
+tornado>=6.3.0
+rapidfuzz>=3.9.0,<4.0.0
 whatthepatch>=1.0.6
 
 # ===== System Utilities =====
-psutil
+psutil>=5.9.0
 python-json-logger>=3.2.1
 prompt-toolkit>=3.0.50
 
 # ===== Content Processing =====
 python-frontmatter>=1.1.0
-PyPDF2
-python-pptx
-pylatexenc
-python-docx
+PyPDF2>=3.0.0
+python-pptx>=0.6.21
+pylatexenc>=2.10
+python-docx>=1.1.0
 bashlex>=0.18
-Pillow
+Pillow>=10.0.0
 
 # ===== File and Data Processing =====
-binaryornot
-deprecated
+binaryornot>=0.4.4
+deprecated>=1.2.14
 
 # ===== HTTP and Network =====
-requests
-urllib3
-charset-normalizer
-certifi
-idna
+requests>=2.31.0
+urllib3>=2.0.0,<3.0.0
+charset-normalizer>=3.3.0
+certifi>=2023.7.22
+idna>=3.4
 
-# ===== EXCLUDED FOR STABILITY =====
-# anthropic - Use LiteLLM for OpenRouter instead
-# openai - Use LiteLLM for OpenRouter instead  
-# docker - Not needed for local runtime
-# google-* - No Google Cloud dependencies
+# ===== Security =====
+pydantic>=2.5.0,<3.0.0
+pydantic-settings>=2.1.0
+
+# ===== Async Support =====
+anyio>=4.0.0,<5.0.0
+
+# ===== CORS Support =====
+starlette>=0.27.0
+
+# ===== EXCLUDED FOR HF SPACES STABILITY =====
+# docker - Not available in HF Spaces
+# google-* - Heavy dependencies, not essential
 # redis - External service
-# e2b - External service
+# e2b - External service  
 # browsergym-core - Heavy browser automation
 # boto3 - AWS dependencies not needed
 # opentelemetry-* - Monitoring not essential
@@ -67,6 +76,8 @@ idna
 # sse-starlette - Server-sent events not essential
 # fastmcp - MCP support not essential
 # protobuf - Heavy dependency
+# anthropic - Use LiteLLM instead
+# openai - Use LiteLLM instead
 
 # NOTE: This minimal setup focuses on core functionality only
 # All AI agents still work with local runtime + OpenRouter
