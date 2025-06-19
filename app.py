@@ -52,10 +52,15 @@ def setup_hf_environment():
         logger.warning("⚠️  Without API key, the backend will start but LLM calls will fail.")
     else:
         logger.info("✅ LLM API key found")
+        # Ensure LLM_API_KEY is set to the OpenRouter key
+        os.environ["LLM_API_KEY"] = api_key
     
     # Fixed model name format for OpenRouter (remove openrouter/ prefix)
     os.environ.setdefault("LLM_MODEL", "anthropic/claude-3-haiku-20240307")
     os.environ.setdefault("LLM_BASE_URL", "https://openrouter.ai/api/v1")
+    
+    # Force OpenRouter provider to avoid direct Anthropic connection
+    os.environ.setdefault("LLM_CUSTOM_LLM_PROVIDER", "openrouter")
     
     # Create directories if they don't exist
     directories = ["/tmp/openhands", "/tmp/cache", "/tmp/workspace", "/tmp/file_store"]
