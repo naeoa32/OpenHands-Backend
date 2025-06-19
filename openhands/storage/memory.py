@@ -19,6 +19,28 @@ class InMemoryFileStore(FileStore):
 
     def read(self, path: str) -> str:
         if path not in self.files:
+            # Auto-create metadata.json with default content if missing
+            if path.endswith('metadata.json'):
+                logger.info(f"Auto-creating missing metadata file: {path}")
+                # Extract conversation_id from path: sessions/{conversation_id}/metadata.json
+                parts = path.split('/')
+                if len(parts) >= 2:
+                    conversation_id = parts[-2]
+                    default_metadata = {
+                        "conversation_id": conversation_id,
+                        "title": f"Conversation {conversation_id[:8]}",
+                        "trigger": "GUI",
+                        "user_id": None,
+                        "selected_repository": None,
+                        "selected_branch": None,
+                        "git_provider": None,
+                        "llm_model": "openrouter/anthropic/claude-3.5-sonnet",
+                        "created_at": "2024-01-01T00:00:00Z",
+                        "updated_at": "2024-01-01T00:00:00Z"
+                    }
+                    import json
+                    self.files[path] = json.dumps(default_metadata)
+                    return self.files[path]
             raise FileNotFoundError(path)
         return self.files[path]
 
