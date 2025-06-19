@@ -49,7 +49,7 @@ ENV DISABLE_PERSISTENT_SESSIONS=true
 ENV SERVE_FRONTEND=false
 
 # Set default LLM configuration
-ENV LLM_MODEL=openrouter/anthropic/claude-3-haiku-20240307
+ENV LLM_MODEL=minimax/minimax-m1
 ENV LLM_BASE_URL=https://openrouter.ai/api/v1
 
 # Expose port (HF Spaces requires 7860)
