@@ -56,7 +56,7 @@ def setup_hf_environment():
         os.environ["LLM_API_KEY"] = api_key
     
     # Fixed model name format for OpenRouter (remove openrouter/ prefix)
-    os.environ.setdefault("LLM_MODEL", "anthropic/claude-3-haiku-20240307")
+    os.environ.setdefault("LLM_MODEL", "minimax/minimax-m1")
     os.environ.setdefault("LLM_BASE_URL", "https://openrouter.ai/api/v1")
     
     # Force OpenRouter provider to avoid direct Anthropic connection
