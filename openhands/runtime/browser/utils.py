@@ -4,7 +4,14 @@ import os
 from pathlib import Path
 from typing import Any
 
-from browsergym.utils.obs import flatten_axtree_to_str
+try:
+    from browsergym.utils.obs import flatten_axtree_to_str
+    BROWSERGYM_AVAILABLE = True
+except ImportError:
+    BROWSERGYM_AVAILABLE = False
+    def flatten_axtree_to_str(*args, **kwargs):
+        return "BrowserGym not available"
+
 from PIL import Image
 
 from openhands.core.exceptions import BrowserUnavailableException

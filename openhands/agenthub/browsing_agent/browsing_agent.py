@@ -1,7 +1,17 @@
 import os
 
-from browsergym.core.action.highlevel import HighLevelActionSet
-from browsergym.utils.obs import flatten_axtree_to_str
+try:
+    from browsergym.core.action.highlevel import HighLevelActionSet
+    from browsergym.utils.obs import flatten_axtree_to_str
+    BROWSERGYM_AVAILABLE = True
+except ImportError:
+    BROWSERGYM_AVAILABLE = False
+    # Dummy classes for compatibility
+    class HighLevelActionSet:
+        def __init__(self, *args, **kwargs):
+            pass
+    def flatten_axtree_to_str(*args, **kwargs):
+        return "BrowserGym not available"
 
 from openhands.agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from openhands.controller.agent import Agent
