@@ -4,13 +4,18 @@ import multiprocessing
 import time
 import uuid
 
+# HF Spaces compatibility - browsergym is optional
+BROWSERGYM_AVAILABLE = False
+gym = None
+flatten_dom_to_str = None
+overlay_som = None
+
 try:
     import gymnasium as gym
     import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
     from browsergym.utils.obs import flatten_dom_to_str, overlay_som
     BROWSERGYM_AVAILABLE = True
 except ImportError as e:
-    BROWSERGYM_AVAILABLE = False
     # Fallback functions for when browsergym is not available
     def flatten_dom_to_str(*args, **kwargs):
         return "BrowserGym not available"

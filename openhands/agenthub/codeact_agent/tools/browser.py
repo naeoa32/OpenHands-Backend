@@ -1,9 +1,12 @@
+# HF Spaces compatibility - browsergym is optional
+BROWSERGYM_AVAILABLE = False
+HighLevelActionSet = None
+
 try:
     from browsergym.core.action.highlevel import HighLevelActionSet
     BROWSERGYM_AVAILABLE = True
 except ImportError:
-    BROWSERGYM_AVAILABLE = False
-    # Dummy HighLevelActionSet for compatibility
+    # Dummy HighLevelActionSet for compatibility when browsergym not available
     class HighLevelActionSet:
         def __init__(self, *args, **kwargs):
             pass
