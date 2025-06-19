@@ -14,6 +14,8 @@ except ImportError:
     class HighLevelActionSet:
         def __init__(self, *args, **kwargs):
             pass
+        def describe(self, *args, **kwargs):
+            return "BrowserGym not available - action space disabled"
     def flatten_axtree_to_str(*args, **kwargs):
         return "BrowserGym not available"
 
