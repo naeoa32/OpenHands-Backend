@@ -4,11 +4,15 @@ import os
 from pathlib import Path
 from typing import Any
 
+# HF Spaces compatibility - browsergym is optional
+BROWSERGYM_AVAILABLE = False
+flatten_axtree_to_str = None
+
 try:
     from browsergym.utils.obs import flatten_axtree_to_str
     BROWSERGYM_AVAILABLE = True
 except ImportError:
-    BROWSERGYM_AVAILABLE = False
+    # Dummy function for compatibility when browsergym not available
     def flatten_axtree_to_str(*args, **kwargs):
         return "BrowserGym not available"
 
