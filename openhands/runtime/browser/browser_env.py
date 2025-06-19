@@ -5,17 +5,22 @@ import time
 import uuid
 
 try:
-    import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
     import gymnasium as gym
+    import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
     from browsergym.utils.obs import flatten_dom_to_str, overlay_som
     BROWSERGYM_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     BROWSERGYM_AVAILABLE = False
     # Fallback functions for when browsergym is not available
     def flatten_dom_to_str(*args, **kwargs):
         return "BrowserGym not available"
     def overlay_som(*args, **kwargs):
         return None
+    # Dummy gym for compatibility
+    class gym:
+        @staticmethod
+        def make(*args, **kwargs):
+            raise ImportError("BrowserGym not available")
 
 import html2text
 import tenacity
