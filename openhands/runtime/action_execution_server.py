@@ -70,7 +70,7 @@ except ImportError:
                                 files.append(os.path.join(root, d) + '/')
                 content = f"Here's the files and directories up to 2 levels deep in {path}, excluding hidden items:\n"
                 content += '\n'.join(sorted(files))
-                return ToolResult(content)
+                return ToolResult(content=content)
             else:
                 with open(path, 'r', encoding='utf-8') as f:
                     lines = f.readlines()
@@ -80,45 +80,59 @@ except ImportError:
                 content = f"Here's the result of running `cat -n` on {path}:\n"
                 for i, line in enumerate(lines, 1):
                     content += f"{i:6}\t{line.rstrip()}\n"
-                return ToolResult(content)
+                return ToolResult(content=content)
         
         def _create_file(self, path, file_text):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(file_text)
-            return ToolResult(f"File created successfully at {path}")
+            return ToolResult(content=f"File created successfully at {path}")
         
         def _str_replace(self, path, old_str, new_str):
             with open(path, 'r', encoding='utf-8') as f:
-                content = f.read()
+                old_content = f.read()
             
-            if old_str not in content:
-                return ToolResult(f"No replacement was performed. old_str `{old_str}` did not appear verbatim in {path}")
+            if old_str not in old_content:
+                return ToolResult(content=f"No replacement was performed. old_str `{old_str}` did not appear verbatim in {path}")
             
-            new_content = content.replace(old_str, new_str)
+            new_content = old_content.replace(old_str, new_str)
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(new_content)
             
-            return ToolResult(f"The file {path} has been edited. Here's the result of running `cat -n` on a snippet of {path}:\n{new_content[:500]}")
+            return ToolResult(
+                content=f"The file {path} has been edited. Here's the result of running `cat -n` on a snippet of {path}:\n{new_content[:500]}",
+                old_content=old_content,
+                new_content=new_content
+            )
         
         def _insert_line(self, path, insert_line, new_str):
             with open(path, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
+                old_content = f.read()
+                lines = old_content.splitlines(True)
             
             lines.insert(insert_line, new_str + '\n')
+            new_content = ''.join(lines)
             
             with open(path, 'w', encoding='utf-8') as f:
-                f.writelines(lines)
+                f.write(new_content)
             
-            return ToolResult(f"The file {path} has been edited. Inserted line at position {insert_line}")
+            return ToolResult(
+                content=f"The file {path} has been edited. Inserted line at position {insert_line}",
+                old_content=old_content,
+                new_content=new_content
+            )
     
     class ToolError(Exception):
-        pass
+        def __init__(self, message):
+            self.message = message
+            super().__init__(message)
     
     class ToolResult:
-        def __init__(self, content, success=True):
-            self.content = content
-            self.success = success
+        def __init__(self, content=None, error=None, old_content=None, new_content=None):
+            self.output = content
+            self.error = error
+            self.old_content = old_content
+            self.new_content = new_content
     
     def get_diff(old_content, new_content):
         diff = list(difflib.unified_diff(
@@ -234,16 +248,29 @@ def _execute_file_editor(
             )
 
     try:
-        result = editor(
-            command=command,
-            path=path,
-            file_text=file_text,
-            view_range=view_range,
-            old_str=old_str,
-            new_str=new_str,
-            insert_line=insert_line,
-            enable_linting=enable_linting,
-        )
+        if OPENHANDS_ACI_AVAILABLE:
+            result = editor(
+                command=command,
+                path=path,
+                file_text=file_text,
+                view_range=view_range,
+                old_str=old_str,
+                new_str=new_str,
+                insert_line=insert_line,
+                enable_linting=enable_linting,
+            )
+        else:
+            # Use fallback implementation
+            result = editor(
+                command=command,
+                path=path,
+                file_text=file_text,
+                view_range=view_range,
+                old_str=old_str,
+                new_str=new_str,
+                insert_line=insert_line,
+                enable_linting=enable_linting,
+            )
     except ToolError as e:
         result = ToolResult(error=e.message)
     except TypeError as e:
