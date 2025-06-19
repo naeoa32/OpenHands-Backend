@@ -20,7 +20,7 @@ CHAT_CONVERSATIONS: Dict[str, Dict] = {}
 class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
-    model: Optional[str] = "openai/gpt-4o-mini"
+    model: Optional[str] = "minimax/minimax-m1"
     api_key: Optional[str] = None
     stream: Optional[bool] = False
     max_tokens: Optional[int] = 1000
@@ -43,6 +43,7 @@ async def chat_info():
         "description": "Real OpenRouter API chat integration",
         "active_conversations": len(CHAT_CONVERSATIONS),
         "supported_models": [
+            "minimax/minimax-m1",
             "openai/gpt-4o-mini",
             "openai/gpt-4o",
             "anthropic/claude-3.5-sonnet",
@@ -283,10 +284,15 @@ async def get_chat_models():
         "status": "success",
         "models": [
             {
+                "id": "minimax/minimax-m1",
+                "name": "Minimax M1",
+                "description": "Minimax's efficient model",
+                "recommended": True
+            },
+            {
                 "id": "openai/gpt-4o-mini",
                 "name": "GPT-4o Mini",
-                "description": "Fast and efficient model",
-                "recommended": True
+                "description": "Fast and efficient model"
             },
             {
                 "id": "openai/gpt-4o",

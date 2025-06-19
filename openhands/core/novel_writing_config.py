@@ -11,7 +11,7 @@ class NovelWritingConfig:
     """Configuration for Novel Writing Mode"""
     
     # Model selection based on budget
-    budget_model: str = "anthropic/claude-3-haiku-20240307"  # Claude 3.5 Haiku for budget
+    budget_model: str = "minimax/minimax-m1"  # Minimax M1 for budget
     premium_model: str = "anthropic/claude-3-opus-20240229"  # Claude 3 Opus for premium
     
     # Optimal parameters for creative writing
@@ -100,8 +100,8 @@ def get_novel_writing_model_info(is_premium: bool = False) -> Dict[str, Any]:
     else:
         return {
             "model": novel_config.budget_model,
-            "name": "Claude 3.5 Haiku",
-            "provider": "Anthropic via OpenRouter", 
+            "name": "Minimax M1",
+            "provider": "Minimax via OpenRouter", 
             "tier": "Budget",
             "strengths": ["Fast responses", "Good creative writing", "Cost effective"],
             "cost": "Lower cost per token",
