@@ -31,14 +31,18 @@ except ImportError:
     
     class ToolError(Exception):
         """Fallback ToolError exception."""
-        pass
+        def __init__(self, message):
+            self.message = message
+            super().__init__(message)
     
     class ToolResult:
         """Fallback ToolResult class."""
-        def __init__(self, output: str = "", error: str = "", exit_code: int = 0):
+        def __init__(self, output: str = "", error: str = "", exit_code: int = 0, old_content=None, new_content=None):
             self.output = output
             self.error = error
             self.exit_code = exit_code
+            self.old_content = old_content
+            self.new_content = new_content
     
     def get_diff(old_content: str, new_content: str) -> str:
         """Fallback diff implementation."""
@@ -54,6 +58,22 @@ except ImportError:
         """Fallback OHEditor implementation for HF Spaces."""
         def __init__(self, *args, **kwargs):
             pass
+
+        def __call__(self, command, path, file_text=None, view_range=None, old_str=None, new_str=None, insert_line=None, enable_linting=False):
+            """Fallback file editor implementation."""
+            try:
+                if command == 'view':
+                    return self.view(path, view_range)
+                elif command == 'create':
+                    return self.create(path, file_text or '')
+                elif command == 'str_replace':
+                    return self.str_replace(path, old_str, new_str)
+                elif command == 'insert':
+                    return self.insert(path, insert_line, new_str or '')
+                else:
+                    raise ToolError(f"Unknown command: {command}")
+            except Exception as e:
+                raise ToolError(str(e))
         
         def view(self, path: str, view_range: Optional[list] = None) -> ToolResult:
             """View file content."""
@@ -87,16 +107,20 @@ except ImportError:
             """Replace string in file."""
             try:
                 with open(path, 'r', encoding='utf-8') as f:
-                    content = f.read()
+                    old_content = f.read()
                 
-                if old_str not in content:
+                if old_str not in old_content:
                     return ToolResult(error=f"String not found: {old_str}", exit_code=1)
                 
-                new_content = content.replace(old_str, new_str)
+                new_content = old_content.replace(old_str, new_str)
                 with open(path, 'w', encoding='utf-8') as f:
                     f.write(new_content)
                 
-                return ToolResult(output=f"String replaced in {path}")
+                return ToolResult(
+                    output=f"String replaced in {path}",
+                    old_content=old_content,
+                    new_content=new_content
+                )
             except Exception as e:
                 return ToolResult(error=str(e), exit_code=1)
         
@@ -104,14 +128,20 @@ except ImportError:
             """Insert text at specific line."""
             try:
                 with open(path, 'r', encoding='utf-8') as f:
-                    lines = f.readlines()
+                    old_content = f.read()
+                    lines = old_content.splitlines(True)
                 
                 lines.insert(insert_line, new_str + '\n')
+                new_content = ''.join(lines)
                 
                 with open(path, 'w', encoding='utf-8') as f:
-                    f.writelines(lines)
+                    f.write(new_content)
                 
-                return ToolResult(output=f"Text inserted at line {insert_line} in {path}")
+                return ToolResult(
+                    output=f"Text inserted at line {insert_line} in {path}",
+                    old_content=old_content,
+                    new_content=new_content
+                )
             except Exception as e:
                 return ToolResult(error=str(e), exit_code=1)
 
