@@ -1,17 +1,17 @@
-name: 🚀 Deploy to Hugging Face Spaces
+name: 🚀 Deploy to Minatoz997/Backend66
 
 on:
   workflow_dispatch:
     inputs:
-      space_name:
-        description: 'HF Space name (username/space-name)'
-        required: true
-        type: string
       clean_deploy:
         description: 'Clean deploy (remove all files first)'
         required: true
         default: true
         type: boolean
+      hf_token:
+        description: 'HF Token (or use HF_TOKEN secret)'
+        required: false
+        type: string
 
 jobs:
   deploy:
@@ -30,35 +30,45 @@ jobs:
       run: |
         pip install huggingface_hub
         
-    - name: 🧹 Clean deploy to HF Spaces
+    - name: 🧹 Clean deploy to Minatoz997/Backend66
       if: ${{ inputs.clean_deploy }}
       env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_TOKEN: ${{ inputs.hf_token || secrets.HF_TOKEN }}
       run: |
-        python deploy_to_hf.py --space-name "${{ inputs.space_name }}"
+        python deploy_to_hf.py --space-name "Minatoz997/Backend66"
         
-    - name: 📤 Regular deploy to HF Spaces  
+    - name: 📤 Regular deploy to Minatoz997/Backend66
       if: ${{ !inputs.clean_deploy }}
       env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_TOKEN: ${{ inputs.hf_token || secrets.HF_TOKEN }}
       run: |
         # Install huggingface_hub CLI
         pip install --upgrade huggingface_hub[cli]
         
-        # Upload files
-        huggingface-cli upload ${{ inputs.space_name }} app.py --repo-type=space
-        huggingface-cli upload ${{ inputs.space_name }} requirements.txt --repo-type=space
-        huggingface-cli upload ${{ inputs.space_name }} Dockerfile --repo-type=space
-        huggingface-cli upload ${{ inputs.space_name }} README.md --repo-type=space
-        huggingface-cli upload ${{ inputs.space_name }} PERSONAL_TOKEN_GUIDE.md --repo-type=space
-        huggingface-cli upload ${{ inputs.space_name }} openhands/ --repo-type=space
-        huggingface-cli upload ${{ inputs.space_name }} microagents/ --repo-type=space
+        # Upload essential files only
+        echo "📋 Uploading essential files to Minatoz997/Backend66..."
+        huggingface-cli upload Minatoz997/Backend66 app.py --repo-type=space
+        huggingface-cli upload Minatoz997/Backend66 requirements.txt --repo-type=space
+        huggingface-cli upload Minatoz997/Backend66 Dockerfile --repo-type=space
+        huggingface-cli upload Minatoz997/Backend66 README.md --repo-type=space
+        huggingface-cli upload Minatoz997/Backend66 PERSONAL_TOKEN_GUIDE.md --repo-type=space
+        huggingface-cli upload Minatoz997/Backend66 README_HF_DEPLOYMENT.md --repo-type=space
+        huggingface-cli upload Minatoz997/Backend66 openhands/ --repo-type=space
+        huggingface-cli upload Minatoz997/Backend66 microagents/ --repo-type=space
         
     - name: ✅ Deployment complete
       run: |
-        echo "🎉 Deployment successful!"
-        echo "🌐 Your space: https://huggingface.co/spaces/${{ inputs.space_name }}"
+        echo "🎉 Deployment to Minatoz997/Backend66 successful!"
+        echo "🌐 Your space: https://huggingface.co/spaces/Minatoz997/Backend66"
+        echo "📊 Logs: https://huggingface.co/spaces/Minatoz997/Backend66?logs=container"
         echo "⏱️  Build will start automatically (5-10 minutes)"
-        echo "🔧 Don't forget to set environment variables in HF Spaces settings:"
+        echo ""
+        echo "🔧 NEXT STEPS:"
+        echo "1. Go to: https://huggingface.co/spaces/Minatoz997/Backend66/settings"
+        echo "2. Set environment variables:"
         echo "   - LLM_API_KEY=your_openrouter_key"
-        echo "   - PERSONAL_ACCESS_TOKEN=your_password"
+        echo "   - PERSONAL_ACCESS_TOKEN=backend-for-us-2024"
+        echo "3. Wait for build to complete"
+        echo "4. Test: https://minatoz997-backend66.hf.space/health"
+        echo ""
+        echo "💕 Enjoy your clean personal AI backend!"
