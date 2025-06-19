@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir -p /tmp/openhands /tmp/cache /tmp/workspace /tmp/file_store && \
     chmod -R 777 /tmp/openhands /tmp/cache /tmp/workspace /tmp/file_store
 
-# Copy fixed requirements and install Python dependencies
-COPY requirements_hf_fixed.txt requirements.txt
+# Copy requirements and install Python dependencies
+COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
@@ -59,5 +59,5 @@ EXPOSE 7860
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:7860/health || exit 1
 
-# Run the fixed application
-CMD ["python", "app_hf_final.py"]
+# Run the application
+CMD ["python", "app.py"]
