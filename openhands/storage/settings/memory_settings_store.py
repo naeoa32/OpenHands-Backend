@@ -41,7 +41,7 @@ class MemorySettingsStore(SettingsStore):
             
             return Settings(
                 # Core LLM settings
-                llm_model=os.getenv("DEFAULT_LLM_MODEL", "minimax/minimax-m1"),
+                llm_model=os.getenv("DEFAULT_LLM_MODEL", "anthropic/claude-3.5-sonnet"),
                 llm_base_url=os.getenv("DEFAULT_LLM_BASE_URL", "https://openrouter.ai/api/v1"),
                 llm_api_key=llm_secret,
                 
