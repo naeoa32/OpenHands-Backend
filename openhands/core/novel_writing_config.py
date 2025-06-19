@@ -11,7 +11,7 @@ class NovelWritingConfig:
     """Configuration for Novel Writing Mode"""
     
     # Model selection based on budget
-    budget_model: str = "minimax/minimax-m1"  # Minimax M1 for budget
+    budget_model: str = "anthropic/claude-3.5-sonnet"  # Claude 3.5 Sonnet for quality
     premium_model: str = "anthropic/claude-3-opus-20240229"  # Claude 3 Opus for premium
     
     # Optimal parameters for creative writing

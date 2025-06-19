@@ -20,7 +20,7 @@ CHAT_CONVERSATIONS: Dict[str, Dict] = {}
 class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
-    model: Optional[str] = "minimax/minimax-m1"
+    model: Optional[str] = "anthropic/claude-3.5-sonnet"
     api_key: Optional[str] = None
     stream: Optional[bool] = False
     max_tokens: Optional[int] = 1000
@@ -43,11 +43,11 @@ async def chat_info():
         "description": "Real OpenRouter API chat integration",
         "active_conversations": len(CHAT_CONVERSATIONS),
         "supported_models": [
-            "minimax/minimax-m1",
+            "anthropic/claude-3.5-sonnet",
             "openai/gpt-4o-mini",
             "openai/gpt-4o",
-            "anthropic/claude-3.5-sonnet",
             "anthropic/claude-3-haiku",
+            "minimax/minimax-m1",
             "google/gemini-pro",
             "meta-llama/llama-3.1-8b-instruct"
         ],
@@ -284,9 +284,9 @@ async def get_chat_models():
         "status": "success",
         "models": [
             {
-                "id": "minimax/minimax-m1",
-                "name": "Minimax M1",
-                "description": "Minimax's efficient model",
+                "id": "anthropic/claude-3.5-sonnet",
+                "name": "Claude 3.5 Sonnet",
+                "description": "Anthropic's most capable model for natural conversations",
                 "recommended": True
             },
             {
@@ -300,14 +300,14 @@ async def get_chat_models():
                 "description": "Most capable OpenAI model"
             },
             {
-                "id": "anthropic/claude-3.5-sonnet",
-                "name": "Claude 3.5 Sonnet",
-                "description": "Anthropic's most capable model"
-            },
-            {
                 "id": "anthropic/claude-3-haiku",
                 "name": "Claude 3 Haiku",
                 "description": "Fast and efficient Claude model"
+            },
+            {
+                "id": "minimax/minimax-m1",
+                "name": "Minimax M1",
+                "description": "Minimax's efficient model"
             },
             {
                 "id": "google/gemini-pro",
