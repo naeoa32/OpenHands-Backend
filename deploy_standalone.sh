@@ -1,6 +1,7 @@
 #!/bin/bash
-# 🚀 MANUAL DEPLOY TO HUGGING FACE SPACES
-# Script untuk menghapus semua file lama dan upload file baru yang bersih
+# 🚀 STANDALONE DEPLOY TO HUGGING FACE SPACES
+# Script yang bisa di-download dan dijalankan langsung
+# Download files dari GitHub dan deploy ke HF Spaces
 
 set -e
 
@@ -31,7 +32,7 @@ print_error() {
 # Check if required arguments are provided
 if [ $# -lt 2 ]; then
     print_error "Usage: $0 <space-name> <hf-token>"
-    echo "Example: $0 username/my-openhands-backend hf_xxxxxxxxxxxx"
+    echo "Example: $0 Minatoz997/Backend66 hf_xxxxxxxxxxxx"
     echo ""
     echo "Get your HF token from: https://huggingface.co/settings/tokens"
     exit 1
@@ -40,8 +41,10 @@ fi
 SPACE_NAME="$1"
 HF_TOKEN="$2"
 TEMP_DIR=$(mktemp -d)
+GITHUB_REPO="RenoirArena/OpenHands-Backend"
+GITHUB_BRANCH="explain-personal-token"
 
-# Essential files to deploy
+# Essential files to download and deploy
 ESSENTIAL_FILES=(
     "app.py"
     "requirements.txt"
@@ -65,23 +68,70 @@ cleanup() {
 
 trap cleanup EXIT
 
-print_status "Starting HF Spaces deployment..."
-echo "📁 Source: $(pwd)"
-echo "🌐 Target: $SPACE_NAME"
-echo "📂 Temp dir: $TEMP_DIR"
+print_status "🚀 Starting HF Spaces CLEAN deployment..."
+echo "🌐 Target HF Space: $SPACE_NAME"
+echo "📂 Temp directory: $TEMP_DIR"
+echo "📥 Source: GitHub $GITHUB_REPO ($GITHUB_BRANCH)"
 echo "=" * 60
 
-# Check if huggingface_hub is installed
+# Check dependencies
 print_status "Checking dependencies..."
-if ! python -c "import huggingface_hub" 2>/dev/null; then
-    print_warning "Installing huggingface_hub..."
-    pip install huggingface_hub
+if ! command -v git &> /dev/null; then
+    print_error "Git is required but not installed"
+    exit 1
 fi
+
+if ! command -v curl &> /dev/null; then
+    print_error "Curl is required but not installed"
+    exit 1
+fi
+
 print_success "Dependencies OK"
+
+# Create working directory
+cd "$TEMP_DIR"
+mkdir -p source_files
+
+# Download essential files from GitHub
+print_status "Downloading files from GitHub..."
+BASE_URL="https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH"
+
+for file in "${ESSENTIAL_FILES[@]}"; do
+    print_status "Downloading: $file"
+    if curl -s -f "$BASE_URL/$file" -o "source_files/$file"; then
+        print_success "Downloaded: $file"
+    else
+        print_warning "Could not download: $file (might not exist)"
+    fi
+done
+
+# Download essential folders (as zip and extract)
+print_status "Downloading repository archive..."
+if curl -s -L "https://github.com/$GITHUB_REPO/archive/$GITHUB_BRANCH.zip" -o repo.zip; then
+    if command -v unzip &> /dev/null; then
+        unzip -q repo.zip
+        REPO_DIR="OpenHands-Backend-$GITHUB_BRANCH"
+        
+        # Copy folders
+        for folder in "${ESSENTIAL_FOLDERS[@]}"; do
+            if [ -d "$REPO_DIR/$folder" ]; then
+                cp -r "$REPO_DIR/$folder" "source_files/"
+                print_success "Copied folder: $folder"
+            else
+                print_warning "Folder not found: $folder"
+            fi
+        done
+    else
+        print_error "Unzip is required to extract folders. Please install unzip."
+        exit 1
+    fi
+else
+    print_error "Failed to download repository archive"
+    exit 1
+fi
 
 # Clone HF Space
 print_status "Cloning HF Space: $SPACE_NAME"
-cd "$TEMP_DIR"
 if ! git clone "https://oauth:$HF_TOKEN@huggingface.co/spaces/$SPACE_NAME" hf_space; then
     print_error "Failed to clone HF Space"
     print_warning "Make sure:"
@@ -93,20 +143,16 @@ fi
 print_success "Cloned HF Space"
 
 # Clean HF Space (remove all files except .git)
-print_status "Cleaning HF Space (removing all files except .git)..."
+print_status "🧹 Cleaning HF Space (removing all files except .git)..."
 cd hf_space
 find . -maxdepth 1 -not -name '.git' -not -name '.' -exec rm -rf {} \; 2>/dev/null || true
 print_success "HF Space cleaned"
 
 # Copy essential files
-print_status "Copying essential files..."
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SOURCE_DIR="$SCRIPT_DIR"
-
+print_status "📋 Copying essential files..."
 for file in "${ESSENTIAL_FILES[@]}"; do
-    if [ -f "$SOURCE_DIR/$file" ]; then
-        cp "$SOURCE_DIR/$file" .
+    if [ -f "../source_files/$file" ]; then
+        cp "../source_files/$file" .
         print_success "Copied: $file"
     else
         print_warning "File not found: $file"
@@ -115,8 +161,8 @@ done
 
 # Copy essential folders
 for folder in "${ESSENTIAL_FOLDERS[@]}"; do
-    if [ -d "$SOURCE_DIR/$folder" ]; then
-        cp -r "$SOURCE_DIR/$folder" .
+    if [ -d "../source_files/$folder" ]; then
+        cp -r "../source_files/$folder" .
         print_success "Copied folder: $folder"
     else
         print_warning "Folder not found: $folder"
@@ -124,7 +170,7 @@ for folder in "${ESSENTIAL_FOLDERS[@]}"; do
 done
 
 # Create HF Spaces configuration
-print_status "Creating HF Spaces configuration..."
+print_status "⚙️ Creating HF Spaces configuration..."
 if [ -f "README.md" ]; then
     # Add HF Spaces header if not present
     if ! head -1 README.md | grep -q "^---"; then
@@ -152,7 +198,7 @@ git config user.name "OpenHands Deploy Bot"
 git config user.email "deploy@openhands.dev"
 
 # Commit and push
-print_status "Committing and pushing changes..."
+print_status "📤 Committing and pushing changes..."
 git add -A
 
 if [ -z "$(git status --porcelain)" ]; then
@@ -169,7 +215,9 @@ else
 - microagents/ (templates)
 
 🗑️ Removed all duplicate files
-💕 Ready for personal use!"
+💕 Ready for personal use!
+
+Deployed via: https://github.com/$GITHUB_REPO"
 
     if git push origin main; then
         print_success "Successfully deployed to HF Spaces"
@@ -181,10 +229,16 @@ fi
 
 echo ""
 echo "=" * 60
-print_success "DEPLOYMENT SUCCESSFUL!"
+print_success "🎉 DEPLOYMENT SUCCESSFUL!"
 echo "🌐 Your space: https://huggingface.co/spaces/$SPACE_NAME"
 echo "⏱️  Build will start automatically (5-10 minutes)"
-echo "🔧 Don't forget to set environment variables in HF Spaces settings:"
+echo ""
+echo "🔧 NEXT STEPS:"
+echo "1. Go to: https://huggingface.co/spaces/$SPACE_NAME/settings"
+echo "2. Set environment variables:"
 echo "   - LLM_API_KEY=your_openrouter_key"
 echo "   - PERSONAL_ACCESS_TOKEN=your_password"
-echo "💕 Enjoy your personal AI backend!"
+echo "3. Wait for build to complete"
+echo "4. Test: https://$(echo $SPACE_NAME | tr '/' '-').hf.space/health"
+echo ""
+echo "💕 Enjoy your clean personal AI backend!"

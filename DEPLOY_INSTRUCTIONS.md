@@ -9,12 +9,21 @@ Saya lihat HF Space Anda di https://huggingface.co/spaces/Minatoz997/Backend66/t
 ### **🔥 CARA 1: SCRIPT OTOMATIS (RECOMMENDED)**
 
 ```bash
-# 1. Download script deploy
-curl -O https://raw.githubusercontent.com/RenoirArena/OpenHands-Backend/main/deploy_manual.sh
-chmod +x deploy_manual.sh
+# 1. Download script deploy (standalone - download files dari GitHub)
+curl -O https://raw.githubusercontent.com/RenoirArena/OpenHands-Backend/explain-personal-token/deploy_standalone.sh
+chmod +x deploy_standalone.sh
 
 # 2. Get HF Token dari: https://huggingface.co/settings/tokens
 # 3. Run script
+./deploy_standalone.sh Minatoz997/Backend66 hf_xxxxxxxxxxxxxxxxx
+```
+
+**ATAU jika Anda sudah clone repo ini:**
+
+```bash
+# Download script manual (butuh repo local)
+curl -O https://raw.githubusercontent.com/RenoirArena/OpenHands-Backend/explain-personal-token/deploy_manual.sh
+chmod +x deploy_manual.sh
 ./deploy_manual.sh Minatoz997/Backend66 hf_xxxxxxxxxxxxxxxxx
 ```
 
@@ -29,10 +38,11 @@ chmod +x deploy_manual.sh
 ### **🐍 CARA 2: PYTHON SCRIPT**
 
 ```bash
-# 1. Install dependencies
-pip install huggingface_hub
+# 1. Download Python script
+curl -O https://raw.githubusercontent.com/RenoirArena/OpenHands-Backend/explain-personal-token/deploy_to_hf.py
 
-# 2. Run Python script
+# 2. Install dependencies & run
+pip install huggingface_hub
 python deploy_to_hf.py --space-name Minatoz997/Backend66 --hf-token hf_xxxxxxxxx
 ```
 
