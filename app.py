@@ -157,142 +157,147 @@ if __name__ == "__main__":
         
         # Add Fizzo automation endpoint if available
         if fizzo_available:
-            from fastapi import HTTPException
-            from pydantic import BaseModel
-            import asyncio
-            
-            # Import Fizzo automation with fallback
             try:
-                from fizzo_automation import fizzo_auto_update
-                logger.info("✅ Fizzo automation module loaded")
-            except ImportError as e:
-                logger.error(f"❌ Could not import fizzo_automation: {e}")
-                logger.info("🔧 Creating inline Fizzo automation...")
+                from fastapi import HTTPException
+                from pydantic import BaseModel
+                import asyncio
                 
-                # Inline Fizzo automation implementation
-                async def fizzo_auto_update(email: str, password: str, chapter_title: str, chapter_content: str):
-                    """Inline Fizzo automation implementation"""
-                    try:
-                        from playwright.async_api import async_playwright
-                        
-                        # Validate input
-                        if not email or not password:
-                            return {"success": False, "error": "Email and password are required"}
-                        if not chapter_title or not chapter_content:
-                            return {"success": False, "error": "Chapter title and content are required"}
-                        if len(chapter_content) < 1000:
-                            return {"success": False, "error": "Chapter content must be at least 1,000 characters"}
-                        if len(chapter_content) > 60000:
-                            return {"success": False, "error": "Chapter content must be less than 60,000 characters"}
-                        
-                        logger.info("🚀 Starting Fizzo auto-update process...")
-                        
-                        playwright = await async_playwright().start()
-                        browser = await playwright.chromium.launch(
-                            headless=True,
-                            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
-                        )
-                        page = await browser.new_page()
-                        
+                # Import Fizzo automation with fallback
+                try:
+                    from fizzo_automation import fizzo_auto_update
+                    logger.info("✅ Fizzo automation module loaded")
+                except ImportError as e:
+                    logger.error(f"❌ Could not import fizzo_automation: {e}")
+                    logger.info("🔧 Creating inline Fizzo automation...")
+                    
+                    # Inline Fizzo automation implementation
+                    async def fizzo_auto_update(email: str, password: str, chapter_title: str, chapter_content: str):
+                        """Inline Fizzo automation implementation"""
                         try:
-                            # Navigate to fizzo.org
-                            await page.goto("https://fizzo.org", wait_until='networkidle', timeout=30000)
+                            from playwright.async_api import async_playwright
                             
-                            # Click hamburger menu
-                            await page.click('button:has-text("☰")')
-                            await asyncio.sleep(1)
+                            # Validate input
+                            if not email or not password:
+                                return {"success": False, "error": "Email and password are required"}
+                            if not chapter_title or not chapter_content:
+                                return {"success": False, "error": "Chapter title and content are required"}
+                            if len(chapter_content) < 1000:
+                                return {"success": False, "error": "Chapter content must be at least 1,000 characters"}
+                            if len(chapter_content) > 60000:
+                                return {"success": False, "error": "Chapter content must be less than 60,000 characters"}
                             
-                            # Click "Menulis Cerita"
-                            await page.click('text="Menulis Cerita"')
-                            await asyncio.sleep(2)
+                            logger.info("🚀 Starting Fizzo auto-update process...")
                             
-                            # Click "Lanjutkan dengan Email"
-                            await page.click('text="Lanjutkan dengan Email"')
-                            await asyncio.sleep(2)
+                            playwright = await async_playwright().start()
+                            browser = await playwright.chromium.launch(
+                                headless=True,
+                                args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+                            )
+                            page = await browser.new_page()
                             
-                            # Fill login form
-                            await page.fill('input[type="email"]', email)
-                            await page.fill('input[type="password"]', password)
-                            await page.click('button:has-text("Lanjut")')
-                            
-                            # Wait for dashboard
-                            await page.wait_for_url('**/mobile/**', timeout=15000)
-                            
-                            # Click "New Chapter"
-                            await page.click('text="New Chapter"')
-                            await asyncio.sleep(3)
-                            
-                            # Fill chapter form
-                            await page.fill('input[placeholder*="chapter name"]', chapter_title)
-                            await page.fill('textarea[placeholder*="Start writing"]', chapter_content)
-                            await asyncio.sleep(3)
-                            
-                            # Publish chapter
-                            await page.click('button:has-text("✈️")')
-                            await asyncio.sleep(5)
-                            
+                            try:
+                                # Navigate to fizzo.org
+                                await page.goto("https://fizzo.org", wait_until='networkidle', timeout=30000)
+                                
+                                # Click hamburger menu
+                                await page.click('button:has-text("☰")')
+                                await asyncio.sleep(1)
+                                
+                                # Click "Menulis Cerita"
+                                await page.click('text="Menulis Cerita"')
+                                await asyncio.sleep(2)
+                                
+                                # Click "Lanjutkan dengan Email"
+                                await page.click('text="Lanjutkan dengan Email"')
+                                await asyncio.sleep(2)
+                                
+                                # Fill login form
+                                await page.fill('input[type="email"]', email)
+                                await page.fill('input[type="password"]', password)
+                                await page.click('button:has-text("Lanjut")')
+                                
+                                # Wait for dashboard
+                                await page.wait_for_url('**/mobile/**', timeout=15000)
+                                
+                                # Click "New Chapter"
+                                await page.click('text="New Chapter"')
+                                await asyncio.sleep(3)
+                                
+                                # Fill chapter form
+                                await page.fill('input[placeholder*="chapter name"]', chapter_title)
+                                await page.fill('textarea[placeholder*="Start writing"]', chapter_content)
+                                await asyncio.sleep(3)
+                                
+                                # Publish chapter
+                                await page.click('button:has-text("✈️")')
+                                await asyncio.sleep(5)
+                                
+                                return {
+                                    "success": True,
+                                    "message": "Chapter created successfully",
+                                    "chapter_title": chapter_title,
+                                    "content_length": len(chapter_content)
+                                }
+                                
+                            finally:
+                                await browser.close()
+                                await playwright.stop()
+                                
+                        except Exception as e:
+                            logger.error(f"❌ Fizzo automation failed: {e}")
+                            return {"success": False, "error": str(e)}
+                
+                class FizzoUpdateRequest(BaseModel):
+                    email: str
+                    password: str
+                    chapter_title: str
+                    chapter_content: str
+                
+                @app.post("/api/fizzo-auto-update")
+                async def fizzo_update_endpoint(request: FizzoUpdateRequest):
+                    """
+                    Auto-update novel chapter ke fizzo.org
+                    
+                    Requires:
+                    - email: Email login fizzo.org
+                    - password: Password login fizzo.org  
+                    - chapter_title: Judul chapter (contoh: "Bab 28")
+                    - chapter_content: Isi chapter (1,000-60,000 karakter)
+                    """
+                    try:
+                        # Validate authentication (gunakan existing auth system)
+                        # Note: Bisa ditambahkan Bearer token validation di sini
+                        
+                        logger.info(f"🚀 Starting Fizzo auto-update for chapter: {request.chapter_title}")
+                        
+                        # Run automation
+                        result = await fizzo_auto_update(
+                            email=request.email,
+                            password=request.password,
+                            chapter_title=request.chapter_title,
+                            chapter_content=request.chapter_content
+                        )
+                        
+                        if result.get("success"):
+                            logger.info("✅ Fizzo auto-update successful")
                             return {
                                 "success": True,
-                                "message": "Chapter created successfully",
-                                "chapter_title": chapter_title,
-                                "content_length": len(chapter_content)
+                                "message": "Chapter berhasil diupload ke fizzo.org",
+                                "data": result
                             }
-                            
-                        finally:
-                            await browser.close()
-                            await playwright.stop()
+                        else:
+                            logger.error(f"❌ Fizzo auto-update failed: {result.get('error')}")
+                            raise HTTPException(status_code=400, detail=result.get("error", "Unknown error"))
                             
                     except Exception as e:
-                        logger.error(f"❌ Fizzo automation failed: {e}")
-                        return {"success": False, "error": str(e)}
-            
-            class FizzoUpdateRequest(BaseModel):
-                email: str
-                password: str
-                chapter_title: str
-                chapter_content: str
+                        logger.error(f"❌ Fizzo endpoint error: {e}")
+                        raise HTTPException(status_code=500, detail=str(e))
+                    
+                logger.info("✅ Fizzo automation endpoint added: /api/fizzo-auto-update")
                 
-            @app.post("/api/fizzo-auto-update")
-            async def fizzo_update_endpoint(request: FizzoUpdateRequest):
-                """
-                Auto-update novel chapter ke fizzo.org
-                
-                Requires:
-                - email: Email login fizzo.org
-                - password: Password login fizzo.org  
-                - chapter_title: Judul chapter (contoh: "Bab 28")
-                - chapter_content: Isi chapter (1,000-60,000 karakter)
-                """
-                try:
-                    # Validate authentication (gunakan existing auth system)
-                    # Note: Bisa ditambahkan Bearer token validation di sini
-                    
-                    logger.info(f"🚀 Starting Fizzo auto-update for chapter: {request.chapter_title}")
-                    
-                    # Run automation
-                    result = await fizzo_auto_update(
-                        email=request.email,
-                        password=request.password,
-                        chapter_title=request.chapter_title,
-                        chapter_content=request.chapter_content
-                    )
-                    
-                    if result.get("success"):
-                        logger.info("✅ Fizzo auto-update successful")
-                        return {
-                            "success": True,
-                            "message": "Chapter berhasil diupload ke fizzo.org",
-                            "data": result
-                        }
-                    else:
-                        logger.error(f"❌ Fizzo auto-update failed: {result.get('error')}")
-                        raise HTTPException(status_code=400, detail=result.get("error", "Unknown error"))
-                        
-                except Exception as e:
-                    logger.error(f"❌ Fizzo endpoint error: {e}")
-                    raise HTTPException(status_code=500, detail=str(e))
-                    
-            logger.info("✅ Fizzo automation endpoint added: /api/fizzo-auto-update")
+            except Exception as e:
+                logger.error(f"❌ Failed to setup Fizzo automation endpoint: {e}")
+                logger.warning("⚠️ Fizzo automation will not be available")
         
         # Get configuration
         port = int(os.getenv("PORT", 7860))

@@ -70,7 +70,7 @@ starlette>=0.27.0
 # ===== Optional Browser Support (fallback safe) =====
 gymnasium>=0.29.0
 
-# ===== Playwright for Fizzo.org Automation =====
+# ===== Fizzo Automation Support =====
 playwright>=1.40.0
 
 # ===== EXCLUDED FOR HF SPACES STABILITY =====
