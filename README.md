@@ -78,6 +78,16 @@ Content-Type: application/json
 {
   "initial_user_msg": "Hello! Can you help me with coding?"
 }
+
+# 🚀 NEW: Fizzo.org Auto-Update (public)
+POST /api/fizzo-auto-update
+Content-Type: application/json
+{
+  "email": "your_email@gmail.com",
+  "password": "your_password",
+  "chapter_title": "Bab 28: Judul Chapter",
+  "chapter_content": "Isi chapter novel minimal 1000 karakter..."
+}
 ```
 
 ### 💻 Example Usage
@@ -145,6 +155,7 @@ CORS is pre-configured to allow these domains.
 - ✅ **HF Spaces Optimized** - Perfect for Hugging Face deployment
 - ✅ **Indonesian Novel Writing** - Special support for creative writing
 - ✅ **All-in-One File** - Single app.py file, no confusion
+- 🚀 **NEW: Fizzo.org Auto-Update** - Automated novel chapter publishing
 
 ## 🎯 Use Cases
 
@@ -154,6 +165,7 @@ CORS is pre-configured to allow these domains.
 - **Research Assistant**: Gather information from multiple sources
 - **Educational Tools**: Interactive learning experiences
 - **Novel Writing**: Indonesian creative writing support
+- 🚀 **Novel Publishing**: Auto-update chapters to fizzo.org platform
 
 ## 🔒 Security & Privacy
 
