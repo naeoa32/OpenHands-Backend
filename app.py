@@ -112,6 +112,24 @@ def check_dependencies():
     
     return True
 
+def setup_fizzo_automation():
+    """Setup Fizzo automation dependencies"""
+    try:
+        import playwright
+        logger.info("✅ Playwright available for Fizzo automation")
+        
+        # Auto-install browsers if needed
+        try:
+            from install_playwright import install_playwright_browsers
+            install_playwright_browsers()
+        except Exception as e:
+            logger.warning(f"⚠️ Could not auto-install Playwright browsers: {e}")
+            
+        return True
+    except ImportError:
+        logger.warning("⚠️ Playwright not available - Fizzo automation disabled")
+        return False
+
 if __name__ == "__main__":
     try:
         logger.info("🔧 Setting up Hugging Face environment...")
@@ -121,9 +139,67 @@ if __name__ == "__main__":
         if not check_dependencies():
             logger.error("❌ Critical dependencies missing. Cannot start server.")
             sys.exit(1)
+            
+        logger.info("🎭 Setting up Fizzo automation...")
+        fizzo_available = setup_fizzo_automation()
         
         logger.info("📦 Importing OpenHands app...")
         from openhands.server.app import app
+        
+        # Add Fizzo automation endpoint if available
+        if fizzo_available:
+            from fastapi import HTTPException
+            from pydantic import BaseModel
+            from fizzo_automation import fizzo_auto_update
+            import asyncio
+            
+            class FizzoUpdateRequest(BaseModel):
+                email: str
+                password: str
+                chapter_title: str
+                chapter_content: str
+                
+            @app.post("/api/fizzo-auto-update")
+            async def fizzo_update_endpoint(request: FizzoUpdateRequest):
+                """
+                Auto-update novel chapter ke fizzo.org
+                
+                Requires:
+                - email: Email login fizzo.org
+                - password: Password login fizzo.org  
+                - chapter_title: Judul chapter (contoh: "Bab 28")
+                - chapter_content: Isi chapter (1,000-60,000 karakter)
+                """
+                try:
+                    # Validate authentication (gunakan existing auth system)
+                    # Note: Bisa ditambahkan Bearer token validation di sini
+                    
+                    logger.info(f"🚀 Starting Fizzo auto-update for chapter: {request.chapter_title}")
+                    
+                    # Run automation
+                    result = await fizzo_auto_update(
+                        email=request.email,
+                        password=request.password,
+                        chapter_title=request.chapter_title,
+                        chapter_content=request.chapter_content
+                    )
+                    
+                    if result.get("success"):
+                        logger.info("✅ Fizzo auto-update successful")
+                        return {
+                            "success": True,
+                            "message": "Chapter berhasil diupload ke fizzo.org",
+                            "data": result
+                        }
+                    else:
+                        logger.error(f"❌ Fizzo auto-update failed: {result.get('error')}")
+                        raise HTTPException(status_code=400, detail=result.get("error", "Unknown error"))
+                        
+                except Exception as e:
+                    logger.error(f"❌ Fizzo endpoint error: {e}")
+                    raise HTTPException(status_code=500, detail=str(e))
+                    
+            logger.info("✅ Fizzo automation endpoint added: /api/fizzo-auto-update")
         
         # Get configuration
         port = int(os.getenv("PORT", 7860))
