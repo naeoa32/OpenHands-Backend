@@ -165,6 +165,7 @@ CORS is pre-configured to allow these domains.
 - **Research Assistant**: Gather information from multiple sources
 - **Educational Tools**: Interactive learning experiences
 - **Novel Writing**: Indonesian creative writing support
+- 🚀 **Novel Publishing**: Auto-update chapters to fizzo.org platform
 
 ## 🔒 Security & Privacy
 

@@ -117,6 +117,14 @@ def setup_fizzo_automation():
     try:
         import playwright
         logger.info("✅ Playwright available for Fizzo automation")
+        
+        # Auto-install browsers if needed
+        try:
+            from install_playwright import install_playwright_browsers
+            install_playwright_browsers()
+        except Exception as e:
+            logger.warning(f"⚠️ Could not auto-install Playwright browsers: {e}")
+            
         return True
     except ImportError:
         logger.warning("⚠️ Playwright not available - Fizzo automation disabled")
@@ -163,6 +171,9 @@ if __name__ == "__main__":
                 - chapter_content: Isi chapter (1,000-60,000 karakter)
                 """
                 try:
+                    # Validate authentication (gunakan existing auth system)
+                    # Note: Bisa ditambahkan Bearer token validation di sini
+                    
                     logger.info(f"🚀 Starting Fizzo auto-update for chapter: {request.chapter_title}")
                     
                     # Run automation
