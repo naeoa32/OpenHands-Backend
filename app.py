@@ -123,14 +123,28 @@ def setup_fizzo_automation():
             import subprocess
             import sys
             logger.info("🎭 Installing Playwright browsers...")
+            
+            # Try to install Chromium with proper error handling
             result = subprocess.run([
-                sys.executable, "-m", "playwright", "install", "chromium"
+                sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"
             ], capture_output=True, text=True, timeout=300)
             
             if result.returncode == 0:
                 logger.info("✅ Playwright Chromium installed successfully")
             else:
                 logger.warning(f"⚠️ Playwright install failed: {result.stderr}")
+                # Try without --with-deps flag
+                result2 = subprocess.run([
+                    sys.executable, "-m", "playwright", "install", "chromium"
+                ], capture_output=True, text=True, timeout=300)
+                
+                if result2.returncode == 0:
+                    logger.info("✅ Playwright Chromium installed successfully (without deps)")
+                else:
+                    logger.warning(f"⚠️ Playwright install failed again: {result2.stderr}")
+                    
+        except subprocess.TimeoutExpired:
+            logger.warning("⚠️ Playwright install timeout - continuing anyway")
         except Exception as e:
             logger.warning(f"⚠️ Could not auto-install Playwright browsers: {e}")
             
@@ -162,90 +176,229 @@ if __name__ == "__main__":
                 from pydantic import BaseModel
                 import asyncio
                 
-                # Import Fizzo automation with fallback
-                try:
-                    from fizzo_automation import fizzo_auto_update
-                    logger.info("✅ Fizzo automation module loaded")
-                except ImportError as e:
-                    logger.error(f"❌ Could not import fizzo_automation: {e}")
-                    logger.info("🔧 Creating inline Fizzo automation...")
-                    
-                    # Inline Fizzo automation implementation
-                    async def fizzo_auto_update(email: str, password: str, chapter_title: str, chapter_content: str):
-                        """Inline Fizzo automation implementation"""
+                logger.info("🔧 Creating inline Fizzo automation...")
+                
+                # Inline Fizzo automation implementation - completely self-contained
+                async def fizzo_auto_update(email: str, password: str, chapter_title: str, chapter_content: str):
+                    """Inline Fizzo automation implementation - no external dependencies"""
+                    try:
+                        from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
+                        
+                        # Validate input
+                        if not email or not password:
+                            return {"success": False, "error": "Email and password are required"}
+                        if not chapter_title or not chapter_content:
+                            return {"success": False, "error": "Chapter title and content are required"}
+                        if len(chapter_content) < 1000:
+                            return {"success": False, "error": "Chapter content must be at least 1,000 characters"}
+                        if len(chapter_content) > 60000:
+                            return {"success": False, "error": "Chapter content must be less than 60,000 characters"}
+                        
+                        logger.info("🚀 Starting Fizzo auto-update process...")
+                        
+                        playwright = await async_playwright().start()
+                        browser = await playwright.chromium.launch(
+                            headless=True,
+                            args=[
+                                '--no-sandbox',
+                                '--disable-setuid-sandbox', 
+                                '--disable-dev-shm-usage',
+                                '--disable-accelerated-2d-canvas',
+                                '--no-first-run',
+                                '--no-zygote',
+                                '--disable-gpu'
+                            ]
+                        )
+                        page = await browser.new_page()
+                        
+                        # Set mobile user agent
+                        await page.set_extra_http_headers({
+                            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15'
+                        })
+                        
                         try:
-                            from playwright.async_api import async_playwright
+                            # Step 1: Navigate to fizzo.org
+                            logger.info("🌐 Navigating to fizzo.org...")
+                            await page.goto("https://fizzo.org", wait_until='networkidle', timeout=30000)
                             
-                            # Validate input
-                            if not email or not password:
-                                return {"success": False, "error": "Email and password are required"}
-                            if not chapter_title or not chapter_content:
-                                return {"success": False, "error": "Chapter title and content are required"}
-                            if len(chapter_content) < 1000:
-                                return {"success": False, "error": "Chapter content must be at least 1,000 characters"}
-                            if len(chapter_content) > 60000:
-                                return {"success": False, "error": "Chapter content must be less than 60,000 characters"}
+                            # Step 2: Click hamburger menu
+                            logger.info("📱 Clicking hamburger menu...")
+                            hamburger_selector = 'button:has-text("☰"), [aria-label*="menu"], .menu-button'
+                            await page.wait_for_selector(hamburger_selector, timeout=10000)
+                            await page.click(hamburger_selector)
+                            await asyncio.sleep(1)
                             
-                            logger.info("🚀 Starting Fizzo auto-update process...")
+                            # Step 3: Click "Menulis Cerita"
+                            logger.info("✍️ Clicking 'Menulis Cerita'...")
+                            menulis_selector = 'text="Menulis Cerita"'
+                            await page.wait_for_selector(menulis_selector, timeout=10000)
+                            await page.click(menulis_selector)
+                            await asyncio.sleep(2)
                             
-                            playwright = await async_playwright().start()
-                            browser = await playwright.chromium.launch(
-                                headless=True,
-                                args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
-                            )
-                            page = await browser.new_page()
+                            # Step 4: Click "Lanjutkan dengan Email"
+                            logger.info("📧 Clicking 'Lanjutkan dengan Email'...")
+                            email_button_selector = 'text="Lanjutkan dengan Email"'
+                            await page.wait_for_selector(email_button_selector, timeout=10000)
+                            await page.click(email_button_selector)
+                            await asyncio.sleep(2)
                             
-                            try:
-                                # Navigate to fizzo.org
-                                await page.goto("https://fizzo.org", wait_until='networkidle', timeout=30000)
-                                
-                                # Click hamburger menu
-                                await page.click('button:has-text("☰")')
-                                await asyncio.sleep(1)
-                                
-                                # Click "Menulis Cerita"
-                                await page.click('text="Menulis Cerita"')
-                                await asyncio.sleep(2)
-                                
-                                # Click "Lanjutkan dengan Email"
-                                await page.click('text="Lanjutkan dengan Email"')
-                                await asyncio.sleep(2)
-                                
-                                # Fill login form
-                                await page.fill('input[type="email"]', email)
-                                await page.fill('input[type="password"]', password)
-                                await page.click('button:has-text("Lanjut")')
-                                
-                                # Wait for dashboard
-                                await page.wait_for_url('**/mobile/**', timeout=15000)
-                                
-                                # Click "New Chapter"
-                                await page.click('text="New Chapter"')
-                                await asyncio.sleep(3)
-                                
-                                # Fill chapter form
-                                await page.fill('input[placeholder*="chapter name"]', chapter_title)
-                                await page.fill('textarea[placeholder*="Start writing"]', chapter_content)
-                                await asyncio.sleep(3)
-                                
-                                # Publish chapter
-                                await page.click('button:has-text("✈️")')
-                                await asyncio.sleep(5)
-                                
-                                return {
-                                    "success": True,
-                                    "message": "Chapter created successfully",
-                                    "chapter_title": chapter_title,
-                                    "content_length": len(chapter_content)
-                                }
-                                
-                            finally:
-                                await browser.close()
-                                await playwright.stop()
-                                
-                        except Exception as e:
-                            logger.error(f"❌ Fizzo automation failed: {e}")
-                            return {"success": False, "error": str(e)}
+                            # Step 5: Fill email
+                            logger.info("📝 Filling email field...")
+                            email_input_selector = 'input[type="email"], input[placeholder*="email"], input[name*="email"]'
+                            await page.wait_for_selector(email_input_selector, timeout=10000)
+                            await page.fill(email_input_selector, email)
+                            
+                            # Step 6: Fill password
+                            logger.info("🔒 Filling password field...")
+                            password_input_selector = 'input[type="password"]'
+                            await page.wait_for_selector(password_input_selector, timeout=10000)
+                            await page.fill(password_input_selector, password)
+                            
+                            # Step 7: Click "Lanjut"
+                            logger.info("🚀 Clicking 'Lanjut' button...")
+                            lanjut_button_selector = 'button:has-text("Lanjut"), input[type="submit"]'
+                            await page.click(lanjut_button_selector)
+                            
+                            # Step 8: Wait for dashboard
+                            logger.info("⏳ Waiting for dashboard...")
+                            await page.wait_for_url('**/mobile/**', timeout=15000)
+                            
+                            # Verify login success
+                            dashboard_indicators = [
+                                'text="New Chapter"',
+                                'text="Chapter"',
+                                'text="Story Info"',
+                                '.dashboard, .writer-dashboard'
+                            ]
+                            
+                            login_success = False
+                            for indicator in dashboard_indicators:
+                                try:
+                                    await page.wait_for_selector(indicator, timeout=5000)
+                                    logger.info("✅ Login successful - Dashboard loaded")
+                                    login_success = True
+                                    break
+                                except PlaywrightTimeoutError:
+                                    continue
+                                    
+                            if not login_success:
+                                return {"success": False, "error": "Login failed - Dashboard not found"}
+                            
+                            # Step 9: Click "New Chapter"
+                            logger.info("📝 Clicking 'New Chapter' button...")
+                            new_chapter_selector = 'text="New Chapter", button:has-text("New Chapter")'
+                            await page.wait_for_selector(new_chapter_selector, timeout=10000)
+                            await page.click(new_chapter_selector)
+                            await asyncio.sleep(3)
+                            
+                            # Step 10: Fill chapter title
+                            logger.info(f"📖 Filling chapter title: {chapter_title}")
+                            title_selectors = [
+                                'input[placeholder*="chapter name"]',
+                                'input[placeholder*="Enter chapter"]',
+                                'input[name*="title"]',
+                                '.chapter-title input'
+                            ]
+                            
+                            title_filled = False
+                            for selector in title_selectors:
+                                try:
+                                    await page.wait_for_selector(selector, timeout=5000)
+                                    await page.fill(selector, chapter_title)
+                                    title_filled = True
+                                    break
+                                except PlaywrightTimeoutError:
+                                    continue
+                                    
+                            if not title_filled:
+                                logger.warning("⚠️ Could not find chapter title field")
+                            
+                            # Step 11: Fill chapter content
+                            logger.info(f"📄 Filling chapter content ({len(chapter_content)} characters)...")
+                            content_selectors = [
+                                'textarea[placeholder*="Start writing"]',
+                                'textarea[placeholder*="writing here"]',
+                                '.editor textarea',
+                                '.content-editor textarea',
+                                'div[contenteditable="true"]'
+                            ]
+                            
+                            content_filled = False
+                            for selector in content_selectors:
+                                try:
+                                    await page.wait_for_selector(selector, timeout=5000)
+                                    await page.fill(selector, chapter_content)
+                                    content_filled = True
+                                    break
+                                except PlaywrightTimeoutError:
+                                    continue
+                                    
+                            if not content_filled:
+                                return {"success": False, "error": "Could not find chapter content field"}
+                            
+                            # Step 12: Wait for auto-save
+                            logger.info("💾 Waiting for auto-save...")
+                            await asyncio.sleep(3)
+                            
+                            # Step 13: Publish chapter
+                            logger.info("🚀 Publishing chapter...")
+                            publish_selectors = [
+                                'button:has-text("✈️")',
+                                'button[title*="publish"]',
+                                'button[title*="submit"]',
+                                '.publish-button',
+                                '.submit-button'
+                            ]
+                            
+                            published = False
+                            for selector in publish_selectors:
+                                try:
+                                    await page.wait_for_selector(selector, timeout=5000)
+                                    await page.click(selector)
+                                    published = True
+                                    break
+                                except PlaywrightTimeoutError:
+                                    continue
+                            
+                            if not published:
+                                logger.warning("⚠️ Could not find publish button - chapter may be saved as draft")
+                            
+                            # Wait for success confirmation
+                            await asyncio.sleep(5)
+                            
+                            # Check for success indicators
+                            success_indicators = [
+                                'text="published"',
+                                'text="success"',
+                                'text="berhasil"',
+                                '.success-message'
+                            ]
+                            
+                            success_confirmed = False
+                            for indicator in success_indicators:
+                                try:
+                                    await page.wait_for_selector(indicator, timeout=3000)
+                                    success_confirmed = True
+                                    break
+                                except PlaywrightTimeoutError:
+                                    continue
+                            
+                            return {
+                                "success": True,
+                                "message": "Chapter created successfully",
+                                "chapter_title": chapter_title,
+                                "content_length": len(chapter_content),
+                                "published": published,
+                                "confirmed": success_confirmed
+                            }
+                            
+                        finally:
+                            await browser.close()
+                            await playwright.stop()
+                            
+                    except Exception as e:
+                        logger.error(f"❌ Fizzo automation failed: {e}")
+                        return {"success": False, "error": str(e)}
                 
                 class FizzoUpdateRequest(BaseModel):
                     email: str
@@ -270,13 +423,30 @@ if __name__ == "__main__":
                         
                         logger.info(f"🚀 Starting Fizzo auto-update for chapter: {request.chapter_title}")
                         
-                        # Run automation
-                        result = await fizzo_auto_update(
-                            email=request.email,
-                            password=request.password,
-                            chapter_title=request.chapter_title,
-                            chapter_content=request.chapter_content
-                        )
+                        # Pre-validate inputs
+                        if not request.email or not request.password:
+                            raise HTTPException(status_code=400, detail="Email and password are required")
+                        if not request.chapter_title or not request.chapter_content:
+                            raise HTTPException(status_code=400, detail="Chapter title and content are required")
+                        if len(request.chapter_content) < 1000:
+                            raise HTTPException(status_code=400, detail="Chapter content must be at least 1,000 characters")
+                        if len(request.chapter_content) > 60000:
+                            raise HTTPException(status_code=400, detail="Chapter content must be less than 60,000 characters")
+                        
+                        # Run automation with timeout
+                        try:
+                            result = await asyncio.wait_for(
+                                fizzo_auto_update(
+                                    email=request.email,
+                                    password=request.password,
+                                    chapter_title=request.chapter_title,
+                                    chapter_content=request.chapter_content
+                                ),
+                                timeout=300  # 5 minute timeout
+                            )
+                        except asyncio.TimeoutError:
+                            logger.error("❌ Fizzo automation timeout")
+                            raise HTTPException(status_code=408, detail="Automation timeout - please try again")
                         
                         if result.get("success"):
                             logger.info("✅ Fizzo auto-update successful")
@@ -286,18 +456,58 @@ if __name__ == "__main__":
                                 "data": result
                             }
                         else:
-                            logger.error(f"❌ Fizzo auto-update failed: {result.get('error')}")
-                            raise HTTPException(status_code=400, detail=result.get("error", "Unknown error"))
+                            error_msg = result.get("error", "Unknown error")
+                            logger.error(f"❌ Fizzo auto-update failed: {error_msg}")
                             
+                            # Provide more specific error codes
+                            if "login failed" in error_msg.lower():
+                                raise HTTPException(status_code=401, detail=f"Login failed: {error_msg}")
+                            elif "chapter content" in error_msg.lower():
+                                raise HTTPException(status_code=400, detail=f"Content error: {error_msg}")
+                            else:
+                                raise HTTPException(status_code=500, detail=f"Automation error: {error_msg}")
+                            
+                    except HTTPException:
+                        # Re-raise HTTP exceptions as-is
+                        raise
                     except Exception as e:
                         logger.error(f"❌ Fizzo endpoint error: {e}")
-                        raise HTTPException(status_code=500, detail=str(e))
+                        import traceback
+                        traceback.print_exc()
+                        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
                     
                 logger.info("✅ Fizzo automation endpoint added: /api/fizzo-auto-update")
                 
             except Exception as e:
                 logger.error(f"❌ Failed to setup Fizzo automation endpoint: {e}")
                 logger.warning("⚠️ Fizzo automation will not be available")
+        else:
+            # Add fallback endpoint when Fizzo automation is not available
+            try:
+                from fastapi import HTTPException
+                from pydantic import BaseModel
+                
+                class FizzoUpdateRequest(BaseModel):
+                    email: str
+                    password: str
+                    chapter_title: str
+                    chapter_content: str
+                
+                @app.post("/api/fizzo-auto-update")
+                async def fizzo_update_fallback(request: FizzoUpdateRequest):
+                    """
+                    Fallback endpoint when Fizzo automation is not available
+                    """
+                    logger.warning("⚠️ Fizzo automation not available - Playwright missing")
+                    raise HTTPException(
+                        status_code=503, 
+                        detail="Fizzo automation service unavailable - Playwright not installed"
+                    )
+                    
+                logger.info("⚠️ Fizzo automation fallback endpoint added: /api/fizzo-auto-update")
+                
+            except Exception as e:
+                logger.error(f"❌ Failed to setup Fizzo fallback endpoint: {e}")
         
         # Get configuration
         port = int(os.getenv("PORT", 7860))
@@ -311,7 +521,9 @@ if __name__ == "__main__":
         print(f"🔑 LLM API Key: {'✅ Set' if os.getenv('LLM_API_KEY') else '❌ Missing'}")
         print(f"🤖 LLM Model: {os.getenv('LLM_MODEL', 'Not configured')}")
         print(f"🏃 Runtime: {os.getenv('OPENHANDS_RUNTIME', 'local')}")
+        print(f"🎭 Fizzo Automation: {'✅ Available' if fizzo_available else '❌ Disabled (Playwright missing)'}")
         print("📡 API Endpoints available at /docs")
+        print("🔧 Fizzo Endpoint: /api/fizzo-auto-update")
         print("="*50 + "\n")
         
         logger.info("🚀 Starting uvicorn server...")
