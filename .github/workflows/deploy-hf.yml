@@ -92,48 +92,19 @@ jobs:
       run: |
         python deploy_to_hf.py --space-name "Minatoz997/Backend66"
         
-    - name: 📤 Auto deploy to Minatoz997/Backend66 (Push to main)
+    - name: 🚀 Auto deploy to Minatoz997/Backend66 (Push to main)
       if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.clean_deploy) }}
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        # Install huggingface_hub CLI
-        pip install --upgrade huggingface_hub[cli]
-        
-        # Upload essential files only
-        echo "📋 Auto-uploading essential files to Minatoz997/Backend66..."
+        echo "🚀 AUTO DEPLOY: Clean deploy essential files only"
         echo "🔄 Triggered by: ${{ github.event_name }}"
         echo "📝 Commit: ${{ github.sha }}"
         echo "⏰ Time: $(date)"
+        echo ""
         
-        # Upload files with error handling
-        echo "📤 Uploading app.py..."
-        huggingface-cli upload Minatoz997/Backend66 app.py --repo-type=space || echo "❌ Failed to upload app.py"
-        
-        echo "📤 Uploading requirements.txt..."
-        huggingface-cli upload Minatoz997/Backend66 requirements.txt --repo-type=space || echo "❌ Failed to upload requirements.txt"
-        
-        echo "📤 Uploading Dockerfile..."
-        huggingface-cli upload Minatoz997/Backend66 Dockerfile --repo-type=space || echo "❌ Failed to upload Dockerfile"
-        
-        echo "📤 Uploading README files..."
-        huggingface-cli upload Minatoz997/Backend66 README.md --repo-type=space || echo "❌ Failed to upload README.md"
-        huggingface-cli upload Minatoz997/Backend66 PERSONAL_TOKEN_GUIDE.md --repo-type=space || echo "❌ Failed to upload PERSONAL_TOKEN_GUIDE.md"
-        huggingface-cli upload Minatoz997/Backend66 README_HF_DEPLOYMENT.md --repo-type=space || echo "❌ Failed to upload README_HF_DEPLOYMENT.md"
-        
-        echo "📤 Uploading openhands folder..."
-        huggingface-cli upload Minatoz997/Backend66 openhands/ --repo-type=space || echo "❌ Failed to upload openhands/"
-        
-        echo "📤 Uploading microagents folder..."
-        huggingface-cli upload Minatoz997/Backend66 microagents/ --repo-type=space || echo "❌ Failed to upload microagents/"
-        
-        echo "📤 Uploading fizzo files..."
-        huggingface-cli upload Minatoz997/Backend66 test_fizzo_endpoints.py --repo-type=space || echo "❌ Failed to upload test_fizzo_endpoints.py"
-        huggingface-cli upload Minatoz997/Backend66 fizzo_automation.py --repo-type=space || echo "❌ Failed to upload fizzo_automation.py"
-        huggingface-cli upload Minatoz997/Backend66 demo_fizzo_usage.py --repo-type=space || echo "❌ Failed to upload demo_fizzo_usage.py"
-        
-        echo "✅ Upload completed!"
-        echo "🔄 HF Space will restart automatically in 1-2 minutes"
+        # Use the same clean deploy script as manual
+        python deploy_to_hf.py --space-name "Minatoz997/Backend66"
         
     - name: ✅ Deployment complete
       run: |
