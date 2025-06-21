@@ -9,23 +9,61 @@ PASSWORD = "luthfi123"
 # URL endpoint (sesuaikan dengan URL deployment)
 BASE_URL = "http://localhost:7860"  # Default untuk local testing
 
-def test_list_novel():
-    """Test endpoint fizzo-list-novel"""
-    print("\n🔍 Testing endpoint /api/fizzo-list-novel...")
-    url = f"{BASE_URL}/api/fizzo-list-novel"
+def login_and_get_token():
+    """Login dan dapatkan session token"""
+    print("\n🔐 Login untuk mendapatkan session token...")
+    login_url = f"{BASE_URL}/api/fizzo-login"
     payload = {
         "email": EMAIL,
         "password": PASSWORD
     }
     
     try:
-        response = requests.post(url, json=payload, timeout=120)
+        response = requests.post(login_url, json=payload, timeout=120)
+        print(f"Login Status Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("status") == "success":
+                token = result.get("session_token")
+                print(f"✅ Login berhasil, token: {token[:20]}...")
+                return token
+            else:
+                print(f"❌ Login gagal: {result}")
+                return None
+        else:
+            print(f"❌ Login gagal: {response.text}")
+            return None
+    except Exception as e:
+        print(f"❌ Error saat login: {e}")
+        return None
+
+def test_list_novel():
+    """Test endpoint fizzo-list-novel dengan GET method"""
+    print("\n🔍 Testing endpoint /api/fizzo-list-novel...")
+    
+    # Dapatkan session token terlebih dahulu
+    session_token = login_and_get_token()
+    if not session_token:
+        print("❌ Tidak bisa mendapatkan session token, skip test")
+        return None
+    
+    url = f"{BASE_URL}/api/fizzo-list-novel"
+    headers = {
+        "Authorization": f"Bearer {session_token}"
+    }
+    
+    try:
+        # Gunakan GET method sesuai dengan definisi endpoint
+        response = requests.get(url, headers=headers, timeout=120)
         print(f"Status Code: {response.status_code}")
         
         if response.status_code == 200:
-            novels = response.json()
-            print(f"Response: {json.dumps(novels, indent=2)}")
+            result = response.json()
+            print(f"Response: {json.dumps(result, indent=2)}")
             
+            # Response sekarang berupa dict dengan key "novels"
+            novels = result.get("novels", [])
             if isinstance(novels, list):
                 print(f"✅ Berhasil mendapatkan daftar novel: {len(novels)} novel ditemukan")
                 
@@ -38,7 +76,7 @@ def test_list_novel():
                 
                 return novels
             else:
-                print(f"⚠️ Response bukan list: {novels}")
+                print(f"⚠️ Response novels bukan list: {novels}")
                 return None
         else:
             print(f"❌ Gagal mendapatkan daftar novel: {response.text}")
