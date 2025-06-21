@@ -8,6 +8,9 @@ on:
       - 'app.py'
       - 'requirements.txt'
       - 'Dockerfile'
+      - 'test_fizzo_endpoints.py'
+      - 'fizzo_automation.py'
+      - 'demo_fizzo_usage.py'
       - 'openhands/**'
       - 'microagents/**'
       - '.github/workflows/deploy-hf.yml'
@@ -123,6 +126,11 @@ jobs:
         
         echo "📤 Uploading microagents folder..."
         huggingface-cli upload Minatoz997/Backend66 microagents/ --repo-type=space || echo "❌ Failed to upload microagents/"
+        
+        echo "📤 Uploading fizzo files..."
+        huggingface-cli upload Minatoz997/Backend66 test_fizzo_endpoints.py --repo-type=space || echo "❌ Failed to upload test_fizzo_endpoints.py"
+        huggingface-cli upload Minatoz997/Backend66 fizzo_automation.py --repo-type=space || echo "❌ Failed to upload fizzo_automation.py"
+        huggingface-cli upload Minatoz997/Backend66 demo_fizzo_usage.py --repo-type=space || echo "❌ Failed to upload demo_fizzo_usage.py"
         
         echo "✅ Upload completed!"
         echo "🔄 HF Space will restart automatically in 1-2 minutes"
