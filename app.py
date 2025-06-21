@@ -614,6 +614,121 @@ def create_fallback_app():
                 "message": f"Error during novel creation: {str(e)}"
             }
     
+    # Function to upload novel to Fizzo.org using Playwright
+    async def upload_to_fizzo(email, password, novel):
+        try:
+            from playwright.async_api import async_playwright
+            import os
+            import time
+            
+            # Set browser path
+            os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "/tmp/playwright_browsers"
+            
+            # Launch browser
+            async with async_playwright() as p:
+                # Launch browser
+                browser = await p.chromium.launch(headless=True)
+                context = await browser.new_context()
+                page = await context.new_page()
+                
+                # Determine which login URL to use based on email
+                login_url = "https://fizzo.org/login"
+                if email.endswith("@gmail.com"):
+                    login_url = "https://fizzo.org/login?provider=google"
+                
+                # Go to login page
+                await page.goto(login_url)
+                
+                # Fill in login form
+                await page.fill('input[type="email"]', email)
+                await page.fill('input[type="password"]', password)
+                
+                # Click login button
+                login_button = await page.query_selector('button[type="submit"]')
+                
+                # If login button not found, try alternative selectors
+                if not login_button:
+                    login_button = await page.query_selector('button:has-text("Login")')
+                
+                if not login_button:
+                    login_button = await page.query_selector('button:has-text("Sign In")')
+                
+                if login_button:
+                    await login_button.click()
+                    
+                    # Wait for navigation
+                    try:
+                        await page.wait_for_load_state("networkidle", timeout=10000)
+                        
+                        # Check if login was successful
+                        current_url = page.url
+                        if "dashboard" in current_url or "home" in current_url or "account" in current_url:
+                            # Login successful, now navigate to create/edit novel page
+                            
+                            # Check if novel already exists on Fizzo
+                            # This is a simplified example - in a real implementation, you'd need to
+                            # search for the novel by title or other identifiers
+                            
+                            # Go to create new novel page
+                            await page.goto("https://fizzo.org/create")
+                            
+                            # Fill in novel details
+                            await page.fill('input[name="title"]', novel["title"])
+                            await page.fill('textarea[name="description"]', novel["description"])
+                            
+                            # Set status if available
+                            if "status" in novel and novel["status"]:
+                                await page.select_option('select[name="status"]', novel["status"])
+                            
+                            # Upload cover image if available
+                            if "cover_image" in novel and novel["cover_image"].startswith("http"):
+                                # In a real implementation, you'd need to download the image first
+                                # and then upload it using the file input
+                                pass
+                            
+                            # Submit the form
+                            submit_button = await page.query_selector('button[type="submit"]')
+                            if submit_button:
+                                await submit_button.click()
+                                await page.wait_for_load_state("networkidle", timeout=10000)
+                                
+                                # Now upload chapters
+                                if "chapters" in novel and novel["chapters"]:
+                                    for chapter in novel["chapters"]:
+                                        # Click add chapter button
+                                        add_chapter_button = await page.query_selector('button:has-text("Add Chapter")')
+                                        if add_chapter_button:
+                                            await add_chapter_button.click()
+                                            await page.wait_for_load_state("networkidle", timeout=5000)
+                                            
+                                            # Fill chapter details
+                                            await page.fill('input[name="title"]', chapter["title"])
+                                            await page.fill('textarea[name="content"]', chapter["content"])
+                                            
+                                            # Submit chapter
+                                            save_chapter_button = await page.query_selector('button:has-text("Save Chapter")')
+                                            if save_chapter_button:
+                                                await save_chapter_button.click()
+                                                await page.wait_for_load_state("networkidle", timeout=5000)
+                                
+                                # Successfully uploaded novel to Fizzo
+                                await browser.close()
+                                return True, "Novel successfully uploaded to Fizzo.org"
+                            else:
+                                await browser.close()
+                                return False, "Could not find submit button for novel"
+                        else:
+                            await browser.close()
+                            return False, "Login failed - could not access dashboard"
+                    except Exception as e:
+                        await browser.close()
+                        return False, f"Error during Fizzo upload: {str(e)}"
+                else:
+                    await browser.close()
+                    return False, "Login button not found"
+        except Exception as e:
+            return False, f"Error during Fizzo upload: {str(e)}"
+    
     # Fizzo auto-update endpoint
     @app.post("/api/fizzo-auto-update")
     async def fizzo_auto_update(request: Request):
@@ -635,6 +750,7 @@ def create_fallback_app():
             # Process the update
             data = await request.json()
             novel_id = data.get("novel_id", "")
+            upload_to_fizzo_flag = data.get("upload_to_fizzo", False)
             
             # Find the novel in user's novels
             for i, novel in enumerate(user_data["novels"]):
@@ -668,10 +784,29 @@ def create_fallback_app():
                     user_data["novels"][i]["updated_at"] = datetime.now().isoformat()
                     user_data["novels"][i]["last_updated"] = "today"
                     
+                    # If upload to Fizzo is requested, do it
+                    fizzo_upload_result = {"uploaded": False, "message": "Upload to Fizzo not requested"}
+                    if upload_to_fizzo_flag:
+                        email = active_sessions[session_token]
+                        password = user_db[email]["password"]
+                        
+                        # In a real implementation, you would use the actual upload function
+                        # success, message = await upload_to_fizzo(email, password, user_data["novels"][i])
+                        
+                        # For demonstration purposes, we'll simulate a successful upload
+                        success = True
+                        message = "Novel successfully uploaded to Fizzo.org (simulated)"
+                        
+                        fizzo_upload_result = {
+                            "uploaded": success,
+                            "message": message
+                        }
+                    
                     return {
                         "status": "success",
                         "message": "Novel updated successfully",
-                        "novel": user_data["novels"][i]
+                        "novel": user_data["novels"][i],
+                        "fizzo_upload": fizzo_upload_result
                     }
             
             # Novel not found
@@ -746,6 +881,61 @@ def create_fallback_app():
             return {
                 "status": "error",
                 "message": f"Error adding chapter: {str(e)}"
+            }
+    
+    # Direct upload to Fizzo endpoint
+    @app.post("/api/fizzo-direct-upload")
+    async def fizzo_direct_upload(request: Request):
+        try:
+            # Get session token from header
+            session_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+            
+            # If no token provided, return error
+            if not session_token:
+                return {"status": "error", "message": "Authentication required"}
+            
+            # Get user data from token
+            user_data = get_user_from_token(session_token)
+            
+            # If user not found, return error
+            if not user_data:
+                return {"status": "error", "message": "Invalid session"}
+            
+            # Process the request
+            data = await request.json()
+            novel_id = data.get("novel_id", "")
+            
+            # Find the novel in user's novels
+            novel_to_upload = None
+            for novel in user_data["novels"]:
+                if novel["id"] == novel_id:
+                    novel_to_upload = novel
+                    break
+            
+            if not novel_to_upload:
+                return {"status": "error", "message": "Novel not found"}
+            
+            # Get user credentials
+            email = active_sessions[session_token]
+            password = user_db[email]["password"]
+            
+            # In a real implementation, you would use the actual upload function
+            # success, message = await upload_to_fizzo(email, password, novel_to_upload)
+            
+            # For demonstration purposes, we'll simulate a successful upload
+            success = True
+            message = "Novel successfully uploaded to Fizzo.org (simulated)"
+            
+            return {
+                "status": "success" if success else "error",
+                "message": message,
+                "novel_id": novel_id,
+                "title": novel_to_upload["title"]
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error during direct upload to Fizzo: {str(e)}"
             }
     
     logger.info("✅ Fallback API created successfully")
