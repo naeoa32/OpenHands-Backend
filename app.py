@@ -179,7 +179,7 @@ if __name__ == "__main__":
                 logger.info("🔧 Creating inline Fizzo automation...")
                 
                 # Inline Fizzo automation implementation - completely self-contained
-                async def fizzo_auto_update(email: str, password: str, chapter_title: str, chapter_content: str):
+                async def fizzo_auto_update(email: str, password: str, chapter_title: str, chapter_content: str, novel_id: Optional[str] = None):
                     """Inline Fizzo automation implementation - no external dependencies"""
                     try:
                         from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
@@ -284,7 +284,45 @@ if __name__ == "__main__":
                             if not login_success:
                                 return {"success": False, "error": "Login failed - Dashboard not found"}
                             
-                            # Step 9: Click "New Chapter"
+                            # Step 9: Pilih novel jika novel_id diberikan
+                            if novel_id:
+                                try:
+                                    logger.info(f"📚 Mencoba memilih novel dengan ID: {novel_id}")
+                                    
+                                    # Cek apakah ada dropdown atau menu untuk memilih novel
+                                    novel_selector = f'select.novel-selector, [data-novel-id="{novel_id}"], a[href*="novel/{novel_id}"]'
+                                    novel_found = await page.query_selector(novel_selector)
+                                    
+                                    if novel_found:
+                                        logger.info(f"✅ Novel dengan ID {novel_id} ditemukan, mengklik...")
+                                        await novel_found.click()
+                                        await asyncio.sleep(2)
+                                    else:
+                                        # Coba cari di menu Story Info atau dropdown
+                                        story_info_selector = 'text="Story Info", a:has-text("Story Info"), button:has-text("Story Info")'
+                                        story_info = await page.query_selector(story_info_selector)
+                                        
+                                        if story_info:
+                                            logger.info("📚 Mengklik Story Info untuk melihat daftar novel...")
+                                            await story_info.click()
+                                            await asyncio.sleep(2)
+                                            
+                                            # Cari novel berdasarkan ID
+                                            novel_item_selector = f'[data-id="{novel_id}"], [data-novel-id="{novel_id}"], a[href*="{novel_id}"]'
+                                            novel_item = await page.query_selector(novel_item_selector)
+                                            
+                                            if novel_item:
+                                                logger.info(f"✅ Novel dengan ID {novel_id} ditemukan di Story Info, mengklik...")
+                                                await novel_item.click()
+                                                await asyncio.sleep(2)
+                                            else:
+                                                logger.warning(f"⚠️ Novel dengan ID {novel_id} tidak ditemukan, menggunakan novel default")
+                                        else:
+                                            logger.warning("⚠️ Menu Story Info tidak ditemukan, menggunakan novel default")
+                                except Exception as e:
+                                    logger.warning(f"⚠️ Error saat memilih novel: {e}, melanjutkan dengan novel default")
+                            
+                            # Step 10: Click "New Chapter"
                             logger.info("📝 Clicking 'New Chapter' button...")
                             new_chapter_selector = 'text="New Chapter", button:has-text("New Chapter")'
                             await page.wait_for_selector(new_chapter_selector, timeout=10000)
@@ -432,48 +470,223 @@ if __name__ == "__main__":
                             
                         logger.info(f"🚀 Starting Fizzo novel list retrieval for user: {request.email}")
                         
-                        # Import fizzo_automation module
+                        # Implementasi inline untuk mendapatkan daftar novel
                         try:
-                            from fizzo_automation import fizzo_get_novel_list
-                        except ImportError:
-                            # Fallback to inline implementation
                             from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
-                            import re
                             
-                            async def fizzo_get_novel_list(email: str, password: str):
-                                """Inline implementation of fizzo_get_novel_list"""
-                                # Implementation details would go here
-                                # This is a simplified version for fallback
-                                return []
-                        
-                        # Run automation with timeout
-                        try:
-                            result = await asyncio.wait_for(
-                                fizzo_get_novel_list(
-                                    email=request.email,
-                                    password=request.password
-                                ),
-                                timeout=300  # 5 minute timeout
+                            playwright = await async_playwright().start()
+                            browser = await playwright.chromium.launch(
+                                headless=True,
+                                args=[
+                                    '--no-sandbox',
+                                    '--disable-setuid-sandbox', 
+                                    '--disable-dev-shm-usage',
+                                    '--disable-accelerated-2d-canvas',
+                                    '--no-first-run',
+                                    '--no-zygote',
+                                    '--disable-gpu'
+                                ]
                             )
-                        except asyncio.TimeoutError:
-                            logger.error("❌ Fizzo novel list retrieval timeout")
-                            raise HTTPException(status_code=408, detail="Automation timeout - please try again")
-                        
-                        logger.info(f"✅ Fizzo novel list retrieval successful: {len(result)} novels found")
-                        return {
-                            "success": True,
-                            "message": f"Berhasil mendapatkan {len(result)} novel",
-                            "data": result
-                        }
-                    
-                    except HTTPException:
-                        raise
+                            page = await browser.new_page()
+                            
+                            # Set mobile user agent
+                            await page.set_extra_http_headers({
+                                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15'
+                            })
+                            
+                            novels = []
+                            
+                            try:
+                                # Step 1: Navigate to fizzo.org
+                                logger.info("🌐 Navigating to fizzo.org...")
+                                await page.goto("https://fizzo.org", wait_until='networkidle', timeout=30000)
+                                
+                                # Step 2: Click hamburger menu
+                                logger.info("📱 Clicking hamburger menu...")
+                                hamburger_selector = 'button:has-text("☰"), [aria-label*="menu"], .menu-button'
+                                await page.wait_for_selector(hamburger_selector, timeout=10000)
+                                await page.click(hamburger_selector)
+                                await asyncio.sleep(1)
+                                
+                                # Step 3: Click "Menulis Cerita"
+                                logger.info("✍️ Clicking 'Menulis Cerita'...")
+                                menulis_selector = 'text="Menulis Cerita"'
+                                await page.wait_for_selector(menulis_selector, timeout=10000)
+                                await page.click(menulis_selector)
+                                await asyncio.sleep(2)
+                                
+                                # Step 4: Click "Lanjutkan dengan Email"
+                                logger.info("📧 Clicking 'Lanjutkan dengan Email'...")
+                                email_button_selector = 'text="Lanjutkan dengan Email"'
+                                await page.wait_for_selector(email_button_selector, timeout=10000)
+                                await page.click(email_button_selector)
+                                await asyncio.sleep(2)
+                                
+                                # Step 5: Fill email
+                                logger.info("📝 Filling email field...")
+                                email_input_selector = 'input[type="email"], input[placeholder*="email"], input[name*="email"]'
+                                await page.wait_for_selector(email_input_selector, timeout=10000)
+                                await page.fill(email_input_selector, request.email)
+                                
+                                # Step 6: Fill password
+                                logger.info("🔒 Filling password field...")
+                                password_input_selector = 'input[type="password"]'
+                                await page.wait_for_selector(password_input_selector, timeout=10000)
+                                await page.fill(password_input_selector, request.password)
+                                
+                                # Step 7: Click "Lanjut"
+                                logger.info("🚀 Clicking 'Lanjut' button...")
+                                lanjut_button_selector = 'button:has-text("Lanjut"), input[type="submit"]'
+                                await page.click(lanjut_button_selector)
+                                
+                                # Step 8: Wait for dashboard
+                                logger.info("⏳ Waiting for dashboard...")
+                                await page.wait_for_url('**/mobile/**', timeout=15000)
+                                
+                                # Verify login success
+                                dashboard_indicators = [
+                                    'text="New Chapter"',
+                                    'text="Chapter"',
+                                    'text="Story Info"',
+                                    '.dashboard, .writer-dashboard'
+                                ]
+                                
+                                login_success = False
+                                for indicator in dashboard_indicators:
+                                    try:
+                                        await page.wait_for_selector(indicator, timeout=5000)
+                                        logger.info("✅ Login successful - Dashboard loaded")
+                                        login_success = True
+                                        break
+                                    except PlaywrightTimeoutError:
+                                        continue
+                                        
+                                if not login_success:
+                                    return {"success": False, "error": "Login failed - Dashboard not found"}
+                                
+                                # Step 9: Cari dan klik Story Info atau menu yang menampilkan daftar novel
+                                logger.info("📚 Mencari menu Story Info...")
+                                story_info_selector = 'text="Story Info", a:has-text("Story Info"), button:has-text("Story Info")'
+                                story_info = await page.query_selector(story_info_selector)
+                                
+                                if story_info:
+                                    logger.info("📚 Mengklik Story Info untuk melihat daftar novel...")
+                                    await story_info.click()
+                                    await asyncio.sleep(2)
+                                    
+                                    # Step 10: Scrape daftar novel
+                                    logger.info("📋 Scraping daftar novel...")
+                                    
+                                    # Coba beberapa selector yang mungkin untuk daftar novel
+                                    novel_selectors = [
+                                        '.novel-list .novel-item',
+                                        '.story-list .story-item',
+                                        '.novel-card',
+                                        'a[href*="novel/"]'
+                                    ]
+                                    
+                                    for selector in novel_selectors:
+                                        novel_elements = await page.query_selector_all(selector)
+                                        if novel_elements and len(novel_elements) > 0:
+                                            logger.info(f"✅ Menemukan {len(novel_elements)} novel dengan selector: {selector}")
+                                            
+                                            for novel in novel_elements:
+                                                try:
+                                                    # Coba dapatkan ID novel dari href atau atribut data
+                                                    novel_id = None
+                                                    novel_title = "Unknown Title"
+                                                    
+                                                    # Coba dapatkan dari href
+                                                    href = await novel.get_attribute('href')
+                                                    if href and 'novel/' in href:
+                                                        novel_id = href.split('novel/')[1].split('/')[0]
+                                                    
+                                                    # Coba dapatkan dari atribut data
+                                                    if not novel_id:
+                                                        novel_id = await novel.get_attribute('data-id') or await novel.get_attribute('data-novel-id')
+                                                    
+                                                    # Coba dapatkan judul novel
+                                                    title_element = await novel.query_selector('.title, .novel-title, h3, h4')
+                                                    if title_element:
+                                                        novel_title = await title_element.text_content()
+                                                    else:
+                                                        novel_title = await novel.text_content()
+                                                    
+                                                    # Bersihkan judul
+                                                    novel_title = novel_title.strip()
+                                                    
+                                                    if novel_id and novel_title:
+                                                        novels.append({
+                                                            "id": novel_id,
+                                                            "title": novel_title
+                                                        })
+                                                        logger.info(f"📕 Novel ditemukan: {novel_title} (ID: {novel_id})")
+                                                except Exception as e:
+                                                    logger.warning(f"⚠️ Error saat scraping novel: {e}")
+                                            
+                                            break
+                                    
+                                    if not novels:
+                                        logger.warning("⚠️ Tidak dapat menemukan daftar novel dengan selector yang tersedia")
+                                else:
+                                    logger.warning("⚠️ Menu Story Info tidak ditemukan")
+                                    
+                                    # Coba cari novel langsung di dashboard
+                                    logger.info("🔍 Mencoba mencari novel langsung di dashboard...")
+                                    novel_elements = await page.query_selector_all('a[href*="novel/"], .novel-card, .story-card')
+                                    
+                                    for novel in novel_elements:
+                                        try:
+                                            # Coba dapatkan ID novel dari href atau atribut data
+                                            novel_id = None
+                                            novel_title = "Unknown Title"
+                                            
+                                            # Coba dapatkan dari href
+                                            href = await novel.get_attribute('href')
+                                            if href and 'novel/' in href:
+                                                novel_id = href.split('novel/')[1].split('/')[0]
+                                            
+                                            # Coba dapatkan judul novel
+                                            title_element = await novel.query_selector('.title, .novel-title, h3, h4')
+                                            if title_element:
+                                                novel_title = await title_element.text_content()
+                                            else:
+                                                novel_title = await novel.text_content()
+                                            
+                                            # Bersihkan judul
+                                            novel_title = novel_title.strip()
+                                            
+                                            if novel_id and novel_title:
+                                                novels.append({
+                                                    "id": novel_id,
+                                                    "title": novel_title
+                                                })
+                                                logger.info(f"📕 Novel ditemukan: {novel_title} (ID: {novel_id})")
+                                        except Exception as e:
+                                            logger.warning(f"⚠️ Error saat scraping novel: {e}")
+                                
+                                return {
+                                    "success": True,
+                                    "novels": novels,
+                                    "count": len(novels)
+                                }
+                                
+                            except Exception as e:
+                                logger.error(f"❌ Error saat scraping novel: {e}")
+                                return {"success": False, "error": str(e)}
+                            finally:
+                                await browser.close()
+                                await playwright.stop()
+                                
+                        except ImportError:
+                            logger.error("❌ Playwright not available for Fizzo novel list retrieval")
+                            raise HTTPException(
+                                status_code=503,
+                                detail="Fizzo automation is not available. Please install Playwright to use this feature."
+                            )
                     except Exception as e:
-                        logger.error(f"❌ Fizzo novel list retrieval failed: {str(e)}")
-                        return {
-                            "success": False,
-                            "error": f"Failed to retrieve novel list: {str(e)}"
-                        }
+                        logger.error(f"❌ Fizzo novel list retrieval failed: {e}")
+                        return {"success": False, "error": str(e)}
                 @app.post("/api/fizzo-auto-update")
                 async def fizzo_update_endpoint(request: FizzoUpdateRequest):
                     """
