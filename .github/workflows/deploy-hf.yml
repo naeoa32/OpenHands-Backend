@@ -101,15 +101,31 @@ jobs:
         echo "📋 Auto-uploading essential files to Minatoz997/Backend66..."
         echo "🔄 Triggered by: ${{ github.event_name }}"
         echo "📝 Commit: ${{ github.sha }}"
+        echo "⏰ Time: $(date)"
         
-        huggingface-cli upload Minatoz997/Backend66 app.py --repo-type=space
-        huggingface-cli upload Minatoz997/Backend66 requirements.txt --repo-type=space
-        huggingface-cli upload Minatoz997/Backend66 Dockerfile --repo-type=space
-        huggingface-cli upload Minatoz997/Backend66 README.md --repo-type=space
-        huggingface-cli upload Minatoz997/Backend66 PERSONAL_TOKEN_GUIDE.md --repo-type=space
-        huggingface-cli upload Minatoz997/Backend66 README_HF_DEPLOYMENT.md --repo-type=space
-        huggingface-cli upload Minatoz997/Backend66 openhands/ --repo-type=space
-        huggingface-cli upload Minatoz997/Backend66 microagents/ --repo-type=space
+        # Upload files with error handling
+        echo "📤 Uploading app.py..."
+        huggingface-cli upload Minatoz997/Backend66 app.py --repo-type=space || echo "❌ Failed to upload app.py"
+        
+        echo "📤 Uploading requirements.txt..."
+        huggingface-cli upload Minatoz997/Backend66 requirements.txt --repo-type=space || echo "❌ Failed to upload requirements.txt"
+        
+        echo "📤 Uploading Dockerfile..."
+        huggingface-cli upload Minatoz997/Backend66 Dockerfile --repo-type=space || echo "❌ Failed to upload Dockerfile"
+        
+        echo "📤 Uploading README files..."
+        huggingface-cli upload Minatoz997/Backend66 README.md --repo-type=space || echo "❌ Failed to upload README.md"
+        huggingface-cli upload Minatoz997/Backend66 PERSONAL_TOKEN_GUIDE.md --repo-type=space || echo "❌ Failed to upload PERSONAL_TOKEN_GUIDE.md"
+        huggingface-cli upload Minatoz997/Backend66 README_HF_DEPLOYMENT.md --repo-type=space || echo "❌ Failed to upload README_HF_DEPLOYMENT.md"
+        
+        echo "📤 Uploading openhands folder..."
+        huggingface-cli upload Minatoz997/Backend66 openhands/ --repo-type=space || echo "❌ Failed to upload openhands/"
+        
+        echo "📤 Uploading microagents folder..."
+        huggingface-cli upload Minatoz997/Backend66 microagents/ --repo-type=space || echo "❌ Failed to upload microagents/"
+        
+        echo "✅ Upload completed!"
+        echo "🔄 HF Space will restart automatically in 1-2 minutes"
         
     - name: ✅ Deployment complete
       run: |
