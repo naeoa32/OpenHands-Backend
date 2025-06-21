@@ -406,7 +406,12 @@ if __name__ == "__main__":
                     email: str
                     password: str
                     chapter_title: str
+                    chapter_content: str
+                    novel_id: Optional[str] = None
 
+                class FizzoListNovelRequest(BaseModel):
+                    email: str
+                    password: str
 
                 @app.post("/api/fizzo-list-novel")
                 async def fizzo_list_novel_endpoint(request: FizzoListNovelRequest):
@@ -559,18 +564,25 @@ if __name__ == "__main__":
                     chapter_content: str
                     novel_id: Optional[str] = None
                 
+                class FizzoListNovelRequest(BaseModel):
+                    email: str
+                    password: str
+                
                 @app.post("/api/fizzo-auto-update")
                 async def fizzo_update_fallback(request: FizzoUpdateRequest):
+                
+                @app.post("/api/fizzo-list-novel")
+                async def fizzo_list_novel_fallback(request: FizzoListNovelRequest):
                     """
                     Fallback endpoint when Fizzo automation is not available
                     """
                     logger.warning("⚠️ Fizzo automation not available - Playwright missing")
                     raise HTTPException(
-                        status_code=503, 
-                        detail="Fizzo automation service unavailable - Playwright not installed"
+                        status_code=503,
+                        detail="Fizzo automation is not available. Please install Playwright to use this feature."
                     )
                     
-                logger.info("⚠️ Fizzo automation fallback endpoint added: /api/fizzo-auto-update")
+                logger.info("⚠️ Fizzo automation fallback endpoints added: /api/fizzo-auto-update, /api/fizzo-list-novel")
                 
             except Exception as e:
                 logger.error(f"❌ Failed to setup Fizzo fallback endpoint: {e}")
