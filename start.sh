@@ -4,7 +4,7 @@
 
 # Set environment variables
 export PLAYWRIGHT_BROWSERS_PATH="/tmp/playwright_browsers"
-export PORT=12000
+export PORT=12001
 export HOST="0.0.0.0"
 export OPENHANDS_RUNTIME="local"
 export CORS_ALLOWED_ORIGINS="*"
