@@ -22,10 +22,11 @@ def setup_hf_environment():
     """Setup environment variables for Hugging Face Spaces"""
 
     # Core HF Spaces configuration
-    os.environ.setdefault("PORT", "12000")  # Use port 12000 for the runtime environment
+    os.environ.setdefault("PORT", "7860")  # Use port 7860 for Hugging Face Spaces
     os.environ.setdefault("HOST", "0.0.0.0")
     os.environ.setdefault("OPENHANDS_RUNTIME", "local")  # Use local runtime, not docker
     os.environ.setdefault("CORS_ALLOWED_ORIGINS", "*")
+    os.environ.setdefault("DISABLE_SECURITY", "false")  # Set to "true" to disable authentication for testing
 
     # Use memory-based storage to avoid file permission issues
     os.environ["SETTINGS_STORE_TYPE"] = "memory"
@@ -179,7 +180,11 @@ def create_fallback_app():
                 "test-chat": "/api/test-chat",
                 "fizzo_login": "/api/fizzo-login",
                 "fizzo_list_novels": "/api/fizzo-list-novels",
+                "fizzo_list_novel": "/api/fizzo-list-novel",  # Add alias for backward compatibility
                 "fizzo_novel_detail": "/api/fizzo-novel/{novel_id}",
+                "fizzo_create_novel": "/api/fizzo-create-novel",
+                "fizzo_add_chapter": "/api/fizzo-add-chapter",
+                "fizzo_direct_upload": "/api/fizzo-direct-upload",
                 "fizzo_auto_update": "/api/fizzo-auto-update"
             }
         }
@@ -509,12 +514,39 @@ def create_fallback_app():
     
     # Fizzo novels endpoint
     @app.get("/api/fizzo-list-novels")
+    @app.get("/api/fizzo-list-novel")  # Add alias for backward compatibility
     async def fizzo_list_novels(request: Request):
+        # Check if security is disabled for testing
+        disable_security = os.environ.get("DISABLE_SECURITY", "false").lower() == "true"
+        
         # Get session token from header
         session_token = request.headers.get("Authorization", "").replace("Bearer ", "")
         
+        # If security is disabled, return sample novels for testing
+        if disable_security:
+            logger.info("Security disabled, returning sample novels")
+            return {
+                "novels": [
+                    {
+                        "id": "sample-novel-1",
+                        "title": "Sample Novel 1",
+                        "description": "This is a sample novel for testing",
+                        "status": "ongoing",
+                        "chapters": [{"title": "Chapter 1", "content": "Sample content"}]
+                    },
+                    {
+                        "id": "sample-novel-2",
+                        "title": "Sample Novel 2",
+                        "description": "Another sample novel for testing",
+                        "status": "completed",
+                        "chapters": [{"title": "Chapter 1", "content": "Sample content"}]
+                    }
+                ]
+            }
+        
         # If no token provided, return empty list
         if not session_token:
+            logger.warning("No session token provided for fizzo-list-novels")
             return {"novels": []}
         
         # Get user data from token
@@ -522,19 +554,39 @@ def create_fallback_app():
         
         # If user not found, return empty list
         if not user_data:
+            logger.warning(f"Invalid session token: {session_token}")
             return {"novels": []}
         
         # Return user's novels
+        logger.info(f"Returning {len(user_data['novels'])} novels for user {user_data['email']}")
         return {"novels": user_data["novels"]}
     
     # Fizzo novel detail endpoint
     @app.get("/api/fizzo-novel/{novel_id}")
     async def fizzo_novel_detail(novel_id: str, request: Request):
+        # Check if security is disabled for testing
+        disable_security = os.environ.get("DISABLE_SECURITY", "false").lower() == "true"
+        
+        # If security is disabled, return sample novel for testing
+        if disable_security:
+            logger.info(f"Security disabled, returning sample novel for ID: {novel_id}")
+            return {
+                "id": novel_id,
+                "title": f"Sample Novel {novel_id}",
+                "description": "This is a sample novel for testing",
+                "status": "ongoing",
+                "chapters": [
+                    {"title": "Chapter 1", "content": "Sample content for chapter 1"},
+                    {"title": "Chapter 2", "content": "Sample content for chapter 2"}
+                ]
+            }
+        
         # Get session token from header
         session_token = request.headers.get("Authorization", "").replace("Bearer ", "")
         
         # If no token provided, return error
         if not session_token:
+            logger.warning("No session token provided for fizzo-novel detail")
             return {"status": "error", "message": "Authentication required"}
         
         # Get user data from token
@@ -542,14 +594,17 @@ def create_fallback_app():
         
         # If user not found, return error
         if not user_data:
+            logger.warning(f"Invalid session token: {session_token}")
             return {"status": "error", "message": "Invalid session"}
         
         # Find the novel in user's novels
         for novel in user_data["novels"]:
             if novel["id"] == novel_id:
+                logger.info(f"Found novel {novel_id} for user {user_data['email']}")
                 return novel
         
         # Novel not found
+        logger.warning(f"Novel {novel_id} not found for user {user_data['email']}")
         return {"status": "error", "message": "Novel not found"}
     
     # Fizzo create novel endpoint
