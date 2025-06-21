@@ -570,6 +570,14 @@ if __name__ == "__main__":
                 
                 @app.post("/api/fizzo-auto-update")
                 async def fizzo_update_fallback(request: FizzoUpdateRequest):
+                    """
+                    Fallback endpoint when Fizzo automation is not available
+                    """
+                    logger.warning("⚠️ Fizzo automation not available - Playwright missing")
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Fizzo automation is not available. Please install Playwright to use this feature."
+                    )
                 
                 @app.post("/api/fizzo-list-novel")
                 async def fizzo_list_novel_fallback(request: FizzoListNovelRequest):
