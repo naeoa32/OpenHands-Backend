@@ -326,8 +326,16 @@ def create_fallback_app():
                 context = await browser.new_context()
                 page = await context.new_page()
                 
-                # Go to Fizzo.org login page
-                await page.goto("https://fizzo.org/login")
+                # Determine which login URL to use based on email
+                login_url = "https://fizzo.org/login"
+                if email.endswith("@gmail.com"):
+                    # For Gmail accounts, we might need to use a different login flow
+                    # This is a placeholder - in a real implementation, you'd need to
+                    # determine the correct login flow for Gmail accounts on Fizzo.org
+                    login_url = "https://fizzo.org/login?provider=google"
+                
+                # Go to login page
+                await page.goto(login_url)
                 
                 # Fill in login form
                 await page.fill('input[type="email"]', email)
@@ -402,9 +410,9 @@ def create_fallback_app():
                 }
             
             # If not in our database, try to authenticate with Fizzo.org
-            # For demonstration, we'll accept any email that ends with @fizzo.org
+            # For demonstration, we'll accept any email that ends with @fizzo.org or @gmail.com
             # and any password that's at least 8 characters
-            elif email.endswith("@fizzo.org") and len(password) >= 8:
+            elif (email.endswith("@fizzo.org") or email.endswith("@gmail.com")) and len(password) >= 8:
                 # Try to authenticate with Fizzo.org
                 # In a production environment, we would use the actual authentication
                 # is_authenticated = await authenticate_with_fizzo(email, password)
@@ -439,7 +447,7 @@ def create_fallback_app():
                     
                     return {
                         "status": "success",
-                        "message": "Login successful with Fizzo.org account",
+                        "message": "Login successful with Fizzo.org or Gmail account",
                         "session_token": session_token
                     }
                 else:
@@ -448,7 +456,7 @@ def create_fallback_app():
                         "message": "Authentication with Fizzo.org failed"
                     }
             
-            # For any email, accept login with password "fizzo123" for testing
+            # For any email (including Gmail), accept login with password "fizzo123" for testing
             elif password == "fizzo123":
                 # Create a new user entry if it doesn't exist
                 if email not in user_db:
