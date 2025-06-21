@@ -147,8 +147,10 @@ def install_playwright_browsers():
 
 def create_fallback_app():
     """Create a fallback FastAPI app when the main OpenHands app cannot be loaded"""
-    from fastapi import FastAPI, Request
+    from fastapi import FastAPI, Request, Response, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
+    import json
+    from datetime import datetime
     
     # Create FastAPI app
     app = FastAPI(title="OpenHands API (Fallback Mode)", version="0.43.0")
@@ -175,6 +177,10 @@ def create_fallback_app():
                 "conversations": "/api/conversations",
                 "simple_conversation": "/api/simple/conversation",
                 "test-chat": "/api/test-chat",
+                "fizzo_login": "/api/fizzo-login",
+                "fizzo_list_novels": "/api/fizzo-list-novels",
+                "fizzo_novel_detail": "/api/fizzo-novel/{novel_id}",
+                "fizzo_auto_update": "/api/fizzo-auto-update"
             }
         }
     
@@ -230,6 +236,186 @@ def create_fallback_app():
                 {"id": "SimpleAgent", "name": "Simple Agent"}
             ]
         }
+    
+    # User database (in-memory for this example)
+    user_db = {
+        "user@example.com": {
+            "password": "password123",
+            "novels": [
+                {
+                    "id": "novel-1",
+                    "title": "The Adventure Begins",
+                    "description": "An exciting journey through unknown lands.",
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat(),
+                    "chapters": [
+                        {"id": "chapter-1", "title": "Chapter 1: The Beginning", "content": "Once upon a time..."}
+                    ]
+                },
+                {
+                    "id": "novel-2",
+                    "title": "Mystery of the Ancient Temple",
+                    "description": "Uncover the secrets of a forgotten civilization.",
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat(),
+                    "chapters": [
+                        {"id": "chapter-1", "title": "Chapter 1: Discovery", "content": "The temple was found..."}
+                    ]
+                }
+            ]
+        },
+        "test@example.com": {
+            "password": "test123",
+            "novels": [
+                {
+                    "id": "novel-3",
+                    "title": "Science Fiction Adventures",
+                    "description": "Explore the future of humanity.",
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat(),
+                    "chapters": [
+                        {"id": "chapter-1", "title": "Chapter 1: New Beginnings", "content": "In the year 2150..."}
+                    ]
+                }
+            ]
+        }
+    }
+    
+    # Active user sessions
+    active_sessions = {}
+    
+    # User login endpoint
+    @app.post("/api/fizzo-login")
+    async def fizzo_login(request: Request):
+        try:
+            data = await request.json()
+            email = data.get("email", "")
+            password = data.get("password", "")
+            
+            # Check if user exists and password is correct
+            if email in user_db and user_db[email]["password"] == password:
+                # Generate a simple session token
+                import uuid
+                session_token = str(uuid.uuid4())
+                active_sessions[session_token] = email
+                
+                return {
+                    "status": "success",
+                    "message": "Login successful",
+                    "session_token": session_token
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": "Invalid email or password"
+                }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error during login: {str(e)}"
+            }
+    
+    # Helper function to get user from session token
+    def get_user_from_token(token):
+        if token in active_sessions:
+            email = active_sessions[token]
+            if email in user_db:
+                return user_db[email]
+        return None
+    
+    # Fizzo novels endpoint
+    @app.get("/api/fizzo-list-novels")
+    async def fizzo_list_novels(request: Request):
+        # Get session token from header
+        session_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        
+        # If no token provided, return empty list
+        if not session_token:
+            return {"novels": []}
+        
+        # Get user data from token
+        user_data = get_user_from_token(session_token)
+        
+        # If user not found, return empty list
+        if not user_data:
+            return {"novels": []}
+        
+        # Return user's novels
+        return {"novels": user_data["novels"]}
+    
+    # Fizzo novel detail endpoint
+    @app.get("/api/fizzo-novel/{novel_id}")
+    async def fizzo_novel_detail(novel_id: str, request: Request):
+        # Get session token from header
+        session_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        
+        # If no token provided, return error
+        if not session_token:
+            return {"status": "error", "message": "Authentication required"}
+        
+        # Get user data from token
+        user_data = get_user_from_token(session_token)
+        
+        # If user not found, return error
+        if not user_data:
+            return {"status": "error", "message": "Invalid session"}
+        
+        # Find the novel in user's novels
+        for novel in user_data["novels"]:
+            if novel["id"] == novel_id:
+                return novel
+        
+        # Novel not found
+        return {"status": "error", "message": "Novel not found"}
+    
+    # Fizzo auto-update endpoint
+    @app.post("/api/fizzo-auto-update")
+    async def fizzo_auto_update(request: Request):
+        try:
+            # Get session token from header
+            session_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+            
+            # If no token provided, return error
+            if not session_token:
+                return {"status": "error", "message": "Authentication required"}
+            
+            # Get user data from token
+            user_data = get_user_from_token(session_token)
+            
+            # If user not found, return error
+            if not user_data:
+                return {"status": "error", "message": "Invalid session"}
+            
+            # Process the update
+            data = await request.json()
+            novel_id = data.get("novel_id", "")
+            
+            # Find the novel in user's novels
+            for i, novel in enumerate(user_data["novels"]):
+                if novel["id"] == novel_id:
+                    # Update the novel (in a real app, you would save to database)
+                    if "title" in data:
+                        user_data["novels"][i]["title"] = data["title"]
+                    if "description" in data:
+                        user_data["novels"][i]["description"] = data["description"]
+                    if "chapters" in data:
+                        user_data["novels"][i]["chapters"] = data["chapters"]
+                    
+                    user_data["novels"][i]["updated_at"] = datetime.now().isoformat()
+                    
+                    return {
+                        "status": "success",
+                        "message": "Novel updated successfully",
+                        "novel": user_data["novels"][i]
+                    }
+            
+            # Novel not found
+            return {"status": "error", "message": "Novel not found"}
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error during Fizzo auto-update: {str(e)}"
+            }
     
     logger.info("✅ Fallback API created successfully")
     return app
