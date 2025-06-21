@@ -39,10 +39,10 @@ if [ ! -f ".dependencies_installed" ]; then
     echo "Installing dependencies..."
     pip install -r requirements.txt
     pip install playwright
-    python -m playwright install chromium
+    python install_playwright.py
     touch .dependencies_installed
 fi
 
 # Start the server
 echo "Starting OpenHands Backend..."
-python simple_app.py
+python app.py

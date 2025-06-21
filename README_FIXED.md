@@ -1,6 +1,6 @@
 # OpenHands Backend - Fixed Version
 
-This is a fixed version of the OpenHands Backend that resolves the Playwright installation issues and provides a simplified API server.
+This is a fixed version of the OpenHands Backend that resolves the Playwright installation issues and provides a fallback API server when the main OpenHands app cannot be loaded.
 
 ## Installation
 
@@ -10,51 +10,41 @@ This is a fixed version of the OpenHands Backend that resolves the Playwright in
    cd OpenHands-Backend
    ```
 
-2. Install the dependencies:
+2. Run the startup script:
    ```bash
-   pip install -r requirements.txt
+   ./start.sh
    ```
 
-3. Install Playwright:
-   ```bash
-   pip install playwright
-   ```
+   This script will:
+   - Install all required dependencies
+   - Install Playwright browsers in a custom path
+   - Start the application
 
-## Running the Application
+## How It Works
 
-There are two ways to run the application:
+The application has been modified to handle Playwright installation issues and provide a fallback API when the main OpenHands app cannot be loaded:
 
-### 1. Simple API Server
+1. **Playwright Installation Fix**:
+   - Uses a custom browser path in `/tmp/playwright_browsers`
+   - Creates a temporary HOME directory to avoid permission issues
+   - Tries multiple installation methods (with and without dependencies)
+   - Falls back to direct download if needed
 
-The simple API server provides basic endpoints without requiring the full OpenHands functionality:
-
-```bash
-python simple_app.py
-```
-
-This will start a server on http://0.0.0.0:12000 with the following endpoints:
-- `/` - Root endpoint with API information
-- `/health` - Health check endpoint
-- `/api/simple/conversation` - Simple conversation endpoint
-- `/api/test-chat` - Test chat endpoint
-- `/api/options/models` - Available models
-- `/api/options/agents` - Available agents
-
-### 2. Full OpenHands Backend
-
-If you want to run the full OpenHands backend:
-
-```bash
-python app.py
-```
+2. **Fallback API**:
+   - When the main OpenHands app cannot be loaded, a fallback API is created
+   - Provides basic endpoints for testing and simple conversations
+   - Uses memory-based storage to avoid file permission issues
 
 ## Environment Variables
 
-The application uses the following environment variables:
+The application uses the following environment variables (set automatically by the startup script):
 
 - `PORT` - The port to run the server on (default: 12000)
 - `HOST` - The host to run the server on (default: 0.0.0.0)
 - `PLAYWRIGHT_BROWSERS_PATH` - The path to store Playwright browsers (default: /tmp/playwright_browsers)
+- `SETTINGS_STORE_TYPE`, `SECRETS_STORE_TYPE`, `CONVERSATION_STORE_TYPE`, `FILE_STORE`, `SESSION_STORE_TYPE` - All set to "memory" to avoid file permission issues
+- `DISABLE_SECURITY`, `OPENHANDS_DISABLE_AUTH` - Set to "true" for public API access
+- `DISABLE_FILE_LOGGING`, `DISABLE_PERSISTENT_SESSIONS` - Set to "true" to avoid file permission issues
 
 ## Troubleshooting
 
@@ -69,6 +59,10 @@ If you encounter issues with Playwright installation, the application will autom
 ### Permission Denied Errors
 
 If you see "Permission denied: '/.cache'" errors, the application will use a temporary directory to avoid these issues.
+
+### Module Import Errors
+
+If you see "No module named 'openhands.app'" errors, the application will automatically create a fallback API with basic functionality.
 
 ## API Usage Examples
 
@@ -94,4 +88,10 @@ curl -X GET http://localhost:12000/api/options/models
 
 ```bash
 curl -X GET http://localhost:12000/api/options/agents
+```
+
+### Health Check
+
+```bash
+curl -X GET http://localhost:12000/health
 ```
