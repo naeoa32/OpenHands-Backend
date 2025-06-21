@@ -147,8 +147,10 @@ def install_playwright_browsers():
 
 def create_fallback_app():
     """Create a fallback FastAPI app when the main OpenHands app cannot be loaded"""
-    from fastapi import FastAPI, Request
+    from fastapi import FastAPI, Request, Response, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
+    import json
+    from datetime import datetime
     
     # Create FastAPI app
     app = FastAPI(title="OpenHands API (Fallback Mode)", version="0.43.0")
@@ -175,6 +177,7 @@ def create_fallback_app():
                 "conversations": "/api/conversations",
                 "simple_conversation": "/api/simple/conversation",
                 "test-chat": "/api/test-chat",
+                "fizzo": "/api/fizzo-list-novels"
             }
         }
     
@@ -230,6 +233,67 @@ def create_fallback_app():
                 {"id": "SimpleAgent", "name": "Simple Agent"}
             ]
         }
+    
+    # Fizzo novels endpoint
+    @app.get("/api/fizzo-list-novels")
+    async def fizzo_list_novels():
+        # Return dummy novels data
+        return {
+            "novels": [
+                {
+                    "id": "novel-1",
+                    "title": "The Adventure Begins",
+                    "description": "An exciting journey through unknown lands.",
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat(),
+                    "chapters": [
+                        {"id": "chapter-1", "title": "Chapter 1: The Beginning", "content": "Once upon a time..."}
+                    ]
+                },
+                {
+                    "id": "novel-2",
+                    "title": "Mystery of the Ancient Temple",
+                    "description": "Uncover the secrets of a forgotten civilization.",
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat(),
+                    "chapters": [
+                        {"id": "chapter-1", "title": "Chapter 1: Discovery", "content": "The temple was found..."}
+                    ]
+                }
+            ]
+        }
+    
+    # Fizzo novel detail endpoint
+    @app.get("/api/fizzo-novel/{novel_id}")
+    async def fizzo_novel_detail(novel_id: str):
+        # Return dummy novel detail
+        return {
+            "id": novel_id,
+            "title": f"Novel {novel_id}",
+            "description": "This is a sample novel description.",
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "chapters": [
+                {"id": "chapter-1", "title": "Chapter 1", "content": "This is the content of chapter 1."},
+                {"id": "chapter-2", "title": "Chapter 2", "content": "This is the content of chapter 2."}
+            ]
+        }
+    
+    # Fizzo auto-update endpoint
+    @app.post("/api/fizzo-auto-update")
+    async def fizzo_auto_update(request: Request):
+        try:
+            data = await request.json()
+            return {
+                "status": "success",
+                "message": "Fizzo auto-update completed successfully",
+                "data": data
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error during Fizzo auto-update: {str(e)}"
+            }
     
     logger.info("✅ Fallback API created successfully")
     return app
