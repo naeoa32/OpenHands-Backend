@@ -6,7 +6,9 @@ import os
 import sys
 import logging
 import uvicorn
+import asyncio
 from pathlib import Path
+from typing import Optional, List, Dict, Any, Union
 
 # Configure logging
 logging.basicConfig(
@@ -175,6 +177,7 @@ if __name__ == "__main__":
                 from fastapi import HTTPException
                 from pydantic import BaseModel
                 import asyncio
+                from typing import Optional, List, Dict, Any, Union
                 
                 logger.info("🔧 Creating inline Fizzo automation...")
                 
@@ -769,6 +772,7 @@ if __name__ == "__main__":
             try:
                 from fastapi import HTTPException
                 from pydantic import BaseModel
+                from typing import Optional, List, Dict, Any, Union
                 
                 class FizzoUpdateRequest(BaseModel):
                     email: str
@@ -792,7 +796,7 @@ if __name__ == "__main__":
                         detail="Fizzo automation is not available. Please install Playwright to use this feature."
                     )
                 
-                @app.post("/api/fizzo-list-novel")
+                @app.post("/api/fizzo-list-novel-fallback")
                 async def fizzo_list_novel_fallback(request: FizzoListNovelRequest):
                     """
                     Fallback endpoint when Fizzo automation is not available
