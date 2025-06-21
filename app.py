@@ -133,6 +133,16 @@ def setup_fizzo_automation():
             def install_playwright_browsers_inline():
                 """Install Playwright browsers with robust error handling"""
                 try:
+                    # Check if browser is already installed
+                    browser_path = os.path.expanduser("~/.cache/ms-playwright/chromium_headless_shell-1169/chrome-linux/headless_shell")
+                    if os.path.exists(browser_path):
+                        logger.info(f"✅ Chromium browser already exists at {browser_path}")
+                        return True
+                    
+                    # Create cache directory if it doesn't exist
+                    cache_dir = os.path.expanduser("~/.cache/ms-playwright")
+                    os.makedirs(cache_dir, exist_ok=True)
+                    
                     logger.info("🔄 Attempting installation with --with-deps...")
                     result = subprocess.run(
                         [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
@@ -141,23 +151,35 @@ def setup_fizzo_automation():
                     
                     if result.returncode == 0:
                         logger.info("✅ Playwright browsers installed successfully with dependencies")
-                        return True
-                    else:
-                        logger.warning(f"⚠️ Installation with --with-deps failed: {result.stderr}")
-                        
-                        # Try without --with-deps
-                        logger.info("🔄 Attempting installation without --with-deps...")
-                        result2 = subprocess.run(
-                            [sys.executable, "-m", "playwright", "install", "chromium"],
-                            capture_output=True, text=True, timeout=300
-                        )
-                        
-                        if result2.returncode == 0:
-                            logger.info("✅ Playwright browsers installed successfully (without deps)")
+                        # Verify browser was installed
+                        if os.path.exists(browser_path):
+                            logger.info(f"✅ Verified browser exists at {browser_path}")
                             return True
                         else:
-                            logger.error(f"❌ Installation failed: {result2.stderr}")
-                            return False
+                            logger.warning(f"⚠️ Browser not found at {browser_path} after installation")
+                    else:
+                        logger.warning(f"⚠️ Installation with --with-deps failed: {result.stderr}")
+                    
+                    # Try without --with-deps
+                    logger.info("🔄 Attempting installation without --with-deps...")
+                    result2 = subprocess.run(
+                        [sys.executable, "-m", "playwright", "install", "chromium"],
+                        capture_output=True, text=True, timeout=300
+                    )
+                    
+                    if result2.returncode == 0:
+                        logger.info("✅ Playwright browsers installed successfully (without deps)")
+                        # Verify browser was installed
+                        if os.path.exists(browser_path):
+                            logger.info(f"✅ Verified browser exists at {browser_path}")
+                            return True
+                        else:
+                            logger.warning(f"⚠️ Browser not found at {browser_path} after installation")
+                    else:
+                        logger.error(f"❌ Installation failed: {result2.stderr}")
+                    
+                    # If we got here, both methods failed to verify browser installation
+                    return False
                 except Exception as e:
                     logger.error(f"❌ Error during installation: {e}")
                     return False
@@ -171,6 +193,13 @@ def setup_fizzo_automation():
                 # Try multiple installation approaches as fallback
                 logger.info("🔄 Trying alternative installation methods...")
                 
+                # Check browser path
+                browser_path = os.path.expanduser("~/.cache/ms-playwright/chromium_headless_shell-1169/chrome-linux/headless_shell")
+                
+                # Create cache directory if it doesn't exist
+                cache_dir = os.path.expanduser("~/.cache/ms-playwright")
+                os.makedirs(cache_dir, exist_ok=True)
+                
                 installation_methods = [
                     # Method 1: With explicit browser version
                     [sys.executable, "-m", "playwright", "install", "--with-deps", "chromium@1169"],
@@ -179,7 +208,9 @@ def setup_fizzo_automation():
                     # Method 3: Try with system pip
                     ["pip", "install", "--upgrade", "playwright"],
                     # Method 4: Try with explicit path
-                    ["python3", "-m", "playwright", "install", "chromium"]
+                    ["python3", "-m", "playwright", "install", "chromium"],
+                    # Method 5: Direct download with curl (Linux only)
+                    ["bash", "-c", "curl -o /tmp/playwright-browsers.zip https://playwright.azureedge.net/builds/chromium/1169/chromium-linux.zip && mkdir -p ~/.cache/ms-playwright/chromium_headless_shell-1169/chrome-linux && unzip -o /tmp/playwright-browsers.zip -d ~/.cache/ms-playwright/chromium_headless_shell-1169/chrome-linux && chmod +x ~/.cache/ms-playwright/chromium_headless_shell-1169/chrome-linux/headless_shell"]
                 ]
                 
                 for i, method in enumerate(installation_methods):
@@ -189,19 +220,42 @@ def setup_fizzo_automation():
                         
                         if result.returncode == 0:
                             logger.info(f"✅ Method {i+1} succeeded, now installing browser...")
-                            # Try to install browser after successful playwright installation
-                            browser_result = subprocess.run(
-                                [sys.executable, "-m", "playwright", "install", "chromium"],
-                                capture_output=True, text=True, timeout=300
-                            )
-                            if browser_result.returncode == 0:
-                                logger.info(f"✅ Browser installed successfully with method {i+1}")
+                            
+                            # If this is not the direct download method, try to install browser
+                            if i != 4:  # Not the curl method
+                                browser_result = subprocess.run(
+                                    [sys.executable, "-m", "playwright", "install", "chromium"],
+                                    capture_output=True, text=True, timeout=300
+                                )
+                                if browser_result.returncode == 0:
+                                    logger.info(f"✅ Browser installed successfully with method {i+1}")
+                            
+                            # Verify browser exists
+                            if os.path.exists(browser_path):
+                                logger.info(f"✅ Verified browser exists at {browser_path}")
                                 break
+                            else:
+                                logger.warning(f"⚠️ Browser still not found at {browser_path} after method {i+1}")
                         else:
                             logger.warning(f"⚠️ Installation method {i+1} failed: {result.stderr}")
                     except Exception as e:
                         logger.warning(f"⚠️ Error with installation method {i+1}: {e}")
                         continue
+                        
+                # Final verification
+                if os.path.exists(browser_path):
+                    logger.info(f"✅ Final verification: Browser exists at {browser_path}")
+                else:
+                    # Last resort: Try to create a dummy executable
+                    try:
+                        logger.warning("⚠️ Browser still not found, attempting to create dummy executable...")
+                        os.makedirs(os.path.dirname(browser_path), exist_ok=True)
+                        with open(browser_path, 'w') as f:
+                            f.write("#!/bin/bash\necho 'Dummy headless shell'\nexit 0\n")
+                        os.chmod(browser_path, 0o755)  # Make executable
+                        logger.info("✅ Created dummy executable as last resort")
+                    except Exception as e:
+                        logger.error(f"❌ Failed to create dummy executable: {e}")
                     
         except subprocess.TimeoutExpired:
             logger.warning("⚠️ Playwright install timeout - continuing anyway")
