@@ -220,193 +220,193 @@ if __name__ == "__main__":
                         })
                         
                         try:
-                            # Step 1: Navigate to fizzo.org
-                            logger.info("🌐 Navigating to fizzo.org...")
-                            await page.goto("https://fizzo.org", wait_until='networkidle', timeout=30000)
+                            # Implementasi login yang lebih robust dengan pendekatan langsung
+                            max_retries = 3
+                            login_success = False
                             
-                            # Step 2: Click hamburger menu
-                            logger.info("📱 Clicking hamburger menu...")
-                            # Coba beberapa selector yang berbeda untuk hamburger menu
-                            hamburger_selectors = [
-                                'button:has-text("☰")',
-                                '[aria-label*="menu"]',
-                                '.menu-button',
-                                '.hamburger',
-                                '.navbar-toggler',
-                                'button.navbar-toggler',
-                                'button[aria-label="Menu"]',
-                                'button.menu-icon'
-                            ]
-                            
-                            # Coba semua selector sampai menemukan yang cocok
-                            hamburger_found = False
-                            for selector in hamburger_selectors:
+                            for retry in range(max_retries):
                                 try:
-                                    logger.info(f"Mencoba selector: {selector}")
-                                    if await page.is_visible(selector, timeout=2000):
-                                        await page.click(selector)
-                                        hamburger_found = True
-                                        logger.info(f"✅ Berhasil menemukan dan mengklik menu dengan selector: {selector}")
-                                        break
-                                except Exception as e:
-                                    logger.info(f"❌ Selector tidak ditemukan: {selector}")
-                                    continue
-                            
-                            if not hamburger_found:
-                                # Jika tidak menemukan hamburger menu, coba ambil screenshot untuk debugging
-                                logger.info("⚠️ Tidak menemukan hamburger menu, mencoba cara alternatif...")
-                                await page.screenshot(path="/tmp/fizzo_page.png")
-                                logger.info(f"📸 Screenshot disimpan di /tmp/fizzo_page.png")
-                                
-                                # Coba langsung ke halaman login
-                                await page.goto("https://fizzo.org/login", wait_until='networkidle', timeout=30000)
-                            
-                            await asyncio.sleep(1)
-                            
-                            # Step 3: Click "Menulis Cerita" atau langsung ke login
-                            if hamburger_found:
-                                logger.info("✍️ Clicking 'Menulis Cerita'...")
-                                menulis_selectors = [
-                                    'text="Menulis Cerita"',
-                                    'a:has-text("Menulis Cerita")',
-                                    'a[href*="write"]',
-                                    'a[href*="menulis"]'
-                                ]
-                                
-                                menulis_found = False
-                                for selector in menulis_selectors:
-                                    try:
-                                        if await page.is_visible(selector, timeout=2000):
-                                            await page.click(selector)
-                                            menulis_found = True
-                                            logger.info(f"✅ Berhasil mengklik 'Menulis Cerita' dengan selector: {selector}")
-                                            break
-                                    except Exception as e:
-                                        logger.info(f"❌ Selector 'Menulis Cerita' tidak ditemukan: {selector}")
-                                        continue
-                                
-                                if not menulis_found:
-                                    logger.info("⚠️ Tidak menemukan 'Menulis Cerita', mencoba cara alternatif...")
+                                    # Step 1: Langsung ke halaman login
+                                    logger.info(f"🌐 Navigating to login page (attempt {retry+1}/{max_retries})...")
                                     await page.goto("https://fizzo.org/login", wait_until='networkidle', timeout=30000)
-                            
-                            await asyncio.sleep(2)
-                            
-                            # Step 4: Click "Lanjutkan dengan Email"
-                            logger.info("📧 Clicking 'Lanjutkan dengan Email'...")
-                            email_button_selectors = [
-                                'text="Lanjutkan dengan Email"',
-                                'button:has-text("Lanjutkan dengan Email")',
-                                'a:has-text("Lanjutkan dengan Email")',
-                                'text="Continue with Email"',
-                                'button:has-text("Continue with Email")',
-                                'a:has-text("Continue with Email")',
-                                'text="Email"',
-                                'button:has-text("Email")',
-                                'a:has-text("Email")'
-                            ]
-                            
-                            email_button_found = False
-                            for selector in email_button_selectors:
-                                try:
-                                    if await page.is_visible(selector, timeout=2000):
-                                        await page.click(selector)
-                                        email_button_found = True
-                                        logger.info(f"✅ Berhasil mengklik 'Lanjutkan dengan Email' dengan selector: {selector}")
+                                    
+                                    # Tunggu halaman login memuat sepenuhnya
+                                    await page.wait_for_load_state('networkidle')
+                                    await asyncio.sleep(3)  # Tambahkan delay untuk memastikan form muncul
+                                    
+                                    # Ambil screenshot untuk debugging
+                                    await page.screenshot(path=f"/tmp/fizzo_login_attempt{retry+1}.png")
+                                    logger.info(f"📸 Screenshot disimpan di /tmp/fizzo_login_attempt{retry+1}.png")
+                                    
+                                    # Step 2: Cek apakah ada tombol "Lanjutkan dengan Email"
+                                    email_button_selectors = [
+                                        'text="Lanjutkan dengan Email"',
+                                        'button:has-text("Lanjutkan dengan Email")',
+                                        'a:has-text("Lanjutkan dengan Email")',
+                                        'text="Continue with Email"',
+                                        'button:has-text("Continue with Email")',
+                                        'a:has-text("Continue with Email")',
+                                        'text="Email"',
+                                        'button:has-text("Email")',
+                                        'a:has-text("Email")'
+                                    ]
+                                    
+                                    for selector in email_button_selectors:
+                                        try:
+                                            if await page.is_visible(selector, timeout=2000):
+                                                await page.click(selector)
+                                                logger.info(f"✅ Berhasil mengklik 'Lanjutkan dengan Email' dengan selector: {selector}")
+                                                await asyncio.sleep(2)
+                                                break
+                                        except Exception as e:
+                                            continue
+                                    
+                                    # Step 3: Cari dan isi form email
+                                    logger.info("📝 Mencari form email...")
+                                    email_selectors = [
+                                        'input[type="email"]', 
+                                        'input[placeholder*="email"]', 
+                                        'input[name*="email"]',
+                                        'input[id*="email"]',
+                                        'input[class*="email"]'
+                                    ]
+                                    
+                                    email_input_found = False
+                                    for selector in email_selectors:
+                                        try:
+                                            if await page.is_visible(selector, timeout=2000):
+                                                await page.fill(selector, email)
+                                                email_input_found = True
+                                                logger.info(f"✅ Berhasil mengisi email dengan selector: {selector}")
+                                                break
+                                        except Exception as e:
+                                            continue
+                                    
+                                    if not email_input_found:
+                                        logger.info("⚠️ Form email tidak ditemukan, mencoba cara lain...")
+                                        # Coba cari semua input visible dan isi yang pertama
+                                        inputs = await page.query_selector_all('input:visible')
+                                        if len(inputs) > 0:
+                                            await inputs[0].fill(email)
+                                            email_input_found = True
+                                            logger.info("✅ Berhasil mengisi email pada input pertama yang terlihat")
+                                    
+                                    if not email_input_found:
+                                        raise Exception("Tidak bisa menemukan form email")
+                                    
+                                    # Step 4: Cari dan isi form password
+                                    logger.info("🔒 Mencari form password...")
+                                    password_selectors = [
+                                        'input[type="password"]',
+                                        'input[name*="password"]',
+                                        'input[id*="password"]',
+                                        'input[class*="password"]'
+                                    ]
+                                    
+                                    password_input_found = False
+                                    for selector in password_selectors:
+                                        try:
+                                            if await page.is_visible(selector, timeout=2000):
+                                                await page.fill(selector, password)
+                                                password_input_found = True
+                                                logger.info(f"✅ Berhasil mengisi password dengan selector: {selector}")
+                                                break
+                                        except Exception as e:
+                                            continue
+                                    
+                                    if not password_input_found:
+                                        logger.info("⚠️ Form password tidak ditemukan, mencoba cara lain...")
+                                        # Coba cari semua input visible dan isi yang kedua (jika ada)
+                                        inputs = await page.query_selector_all('input:visible')
+                                        if len(inputs) > 1:
+                                            await inputs[1].fill(password)
+                                            password_input_found = True
+                                            logger.info("✅ Berhasil mengisi password pada input kedua yang terlihat")
+                                    
+                                    if not password_input_found:
+                                        raise Exception("Tidak bisa menemukan form password")
+                                    
+                                    # Step 5: Klik tombol login atau tekan Enter
+                                    logger.info("🚀 Mencoba login...")
+                                    login_button_selectors = [
+                                        'button:has-text("Lanjut")',
+                                        'input[type="submit"]',
+                                        'button[type="submit"]',
+                                        'button:has-text("Login")',
+                                        'button:has-text("Sign in")',
+                                        'button:has-text("Masuk")',
+                                        'button.login-button',
+                                        'button.submit-button'
+                                    ]
+                                    
+                                    login_button_found = False
+                                    for selector in login_button_selectors:
+                                        try:
+                                            if await page.is_visible(selector, timeout=2000):
+                                                await page.click(selector)
+                                                login_button_found = True
+                                                logger.info(f"✅ Berhasil mengklik tombol login dengan selector: {selector}")
+                                                break
+                                        except Exception as e:
+                                            continue
+                                    
+                                    if not login_button_found:
+                                        logger.info("⚠️ Tombol login tidak ditemukan, mencoba tekan Enter...")
+                                        await page.keyboard.press('Enter')
+                                        logger.info("⌨️ Menekan tombol Enter untuk login")
+                                    
+                                    # Step 6: Tunggu redirect ke dashboard atau halaman setelah login
+                                    logger.info("⏳ Menunggu proses login selesai...")
+                                    
+                                    # Tunggu beberapa detik untuk proses login
+                                    await asyncio.sleep(5)
+                                    
+                                    # Ambil screenshot setelah login
+                                    await page.screenshot(path=f"/tmp/fizzo_after_login{retry+1}.png")
+                                    logger.info(f"📸 Screenshot setelah login disimpan di /tmp/fizzo_after_login{retry+1}.png")
+                                    
+                                    # Cek apakah login berhasil dengan memeriksa URL atau elemen di dashboard
+                                    current_url = page.url
+                                    logger.info(f"🔍 URL setelah login: {current_url}")
+                                    
+                                    # Cek apakah URL mengandung indikasi login berhasil
+                                    if "dashboard" in current_url or "mobile" in current_url or "home" in current_url:
+                                        logger.info("✅ Login berhasil! URL menunjukkan halaman dashboard/mobile/home")
+                                        login_success = True
                                         break
-                                except Exception as e:
-                                    logger.info(f"❌ Selector 'Lanjutkan dengan Email' tidak ditemukan: {selector}")
-                                    continue
-                            
-                            if not email_button_found:
-                                logger.info("⚠️ Tidak menemukan 'Lanjutkan dengan Email', mencoba cek apakah sudah di halaman login...")
-                                # Cek apakah sudah di halaman login dengan melihat input email
-                                if await page.is_visible('input[type="email"]', timeout=2000):
-                                    logger.info("✅ Sudah berada di halaman login dengan form email")
-                                else:
-                                    logger.info("⚠️ Tidak menemukan form login, mencoba reload halaman...")
-                                    await page.goto("https://fizzo.org/login", wait_until='networkidle', timeout=30000)
-                            
-                            await asyncio.sleep(2)
-                            
-                            # Step 5: Fill email
-                            logger.info("📝 Filling email field...")
-                            email_input_selector = 'input[type="email"], input[placeholder*="email"], input[name*="email"]'
-                            
-                            # Tunggu dan coba beberapa kali jika form tidak langsung muncul
-                            email_input_found = False
-                            for attempt in range(3):
-                                try:
-                                    if await page.is_visible(email_input_selector, timeout=5000):
-                                        await page.fill(email_input_selector, email)
-                                        email_input_found = True
-                                        logger.info("✅ Berhasil mengisi email")
+                                    
+                                    # Cek elemen yang hanya muncul setelah login
+                                    dashboard_indicators = [
+                                        'text="Profil"', 
+                                        'text="Logout"', 
+                                        'text="Dashboard"',
+                                        'text="Menulis"',
+                                        'text="Keluar"'
+                                    ]
+                                    
+                                    for indicator in dashboard_indicators:
+                                        try:
+                                            if await page.is_visible(indicator, timeout=2000):
+                                                logger.info(f"✅ Login berhasil! Indikator dashboard ditemukan: {indicator}")
+                                                login_success = True
+                                                break
+                                        except Exception:
+                                            continue
+                                    
+                                    if login_success:
                                         break
-                                    else:
-                                        logger.info(f"⚠️ Form email tidak terlihat, mencoba lagi... (attempt {attempt+1}/3)")
-                                        await asyncio.sleep(2)
+                                    
+                                    logger.info("⚠️ Login mungkin gagal, mencoba lagi...")
+                                    
                                 except Exception as e:
-                                    logger.info(f"❌ Error saat mengisi email: {e}")
-                                    await asyncio.sleep(2)
+                                    logger.error(f"❌ Error saat login (attempt {retry+1}/{max_retries}): {e}")
+                                    if retry < max_retries - 1:
+                                        wait_time = (retry + 1) * 2
+                                        logger.info(f"⏳ Menunggu {wait_time} detik sebelum mencoba lagi...")
+                                        await asyncio.sleep(wait_time)
                             
-                            if not email_input_found:
-                                logger.info("⚠️ Tidak bisa menemukan form email setelah beberapa percobaan")
-                                await page.screenshot(path="/tmp/fizzo_login_page.png")
-                                logger.info(f"📸 Screenshot halaman login disimpan di /tmp/fizzo_login_page.png")
-                                raise Exception("Tidak bisa menemukan form email")
-                            
-                            # Step 6: Fill password
-                            logger.info("🔒 Filling password field...")
-                            password_input_selector = 'input[type="password"]'
-                            
-                            password_input_found = False
-                            for attempt in range(3):
-                                try:
-                                    if await page.is_visible(password_input_selector, timeout=5000):
-                                        await page.fill(password_input_selector, password)
-                                        password_input_found = True
-                                        logger.info("✅ Berhasil mengisi password")
-                                        break
-                                    else:
-                                        logger.info(f"⚠️ Form password tidak terlihat, mencoba lagi... (attempt {attempt+1}/3)")
-                                        await asyncio.sleep(2)
-                                except Exception as e:
-                                    logger.info(f"❌ Error saat mengisi password: {e}")
-                                    await asyncio.sleep(2)
-                            
-                            if not password_input_found:
-                                logger.info("⚠️ Tidak bisa menemukan form password setelah beberapa percobaan")
-                                raise Exception("Tidak bisa menemukan form password")
-                            
-                            # Step 7: Click "Lanjut"
-                            logger.info("🚀 Clicking 'Lanjut' button...")
-                            lanjut_button_selectors = [
-                                'button:has-text("Lanjut")',
-                                'input[type="submit"]',
-                                'button[type="submit"]',
-                                'button:has-text("Login")',
-                                'button:has-text("Sign in")',
-                                'button:has-text("Masuk")'
-                            ]
-                            
-                            lanjut_button_found = False
-                            for selector in lanjut_button_selectors:
-                                try:
-                                    if await page.is_visible(selector, timeout=2000):
-                                        await page.click(selector)
-                                        lanjut_button_found = True
-                                        logger.info(f"✅ Berhasil mengklik tombol login dengan selector: {selector}")
-                                        break
-                                except Exception as e:
-                                    logger.info(f"❌ Selector tombol login tidak ditemukan: {selector}")
-                                    continue
-                            
-                            if not lanjut_button_found:
-                                logger.info("⚠️ Tidak bisa menemukan tombol login")
-                                await page.screenshot(path="/tmp/fizzo_login_button.png")
-                                logger.info(f"📸 Screenshot halaman login disimpan di /tmp/fizzo_login_button.png")
-                                # Coba tekan Enter sebagai alternatif
-                                await page.keyboard.press('Enter')
-                                logger.info("⌨️ Menekan tombol Enter sebagai alternatif")
+                            if not login_success:
+                                raise Exception("Gagal login setelah beberapa percobaan")
                             
                             # Step 8: Wait for dashboard
                             logger.info("⏳ Waiting for dashboard...")
