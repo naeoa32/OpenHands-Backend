@@ -1,6 +1,18 @@
 name: 🚀 Deploy to Minatoz997/Backend66
 
 on:
+  # Auto deploy on push to main branch
+  push:
+    branches: [ main ]
+    paths:
+      - 'app.py'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - 'openhands/**'
+      - 'microagents/**'
+      - '.github/workflows/deploy-hf.yml'
+  
+  # Manual trigger option
   workflow_dispatch:
     inputs:
       clean_deploy:
@@ -70,23 +82,26 @@ jobs:
         print('🎯 Pre-deployment validation complete')
         "
         
-    - name: 🧹 Clean deploy to Minatoz997/Backend66
-      if: ${{ inputs.clean_deploy }}
+    - name: 🧹 Clean deploy to Minatoz997/Backend66 (Manual)
+      if: ${{ github.event_name == 'workflow_dispatch' && inputs.clean_deploy }}
       env:
         HF_TOKEN: ${{ inputs.hf_token || secrets.HF_TOKEN }}
       run: |
         python deploy_to_hf.py --space-name "Minatoz997/Backend66"
         
-    - name: 📤 Regular deploy to Minatoz997/Backend66
-      if: ${{ !inputs.clean_deploy }}
+    - name: 📤 Auto deploy to Minatoz997/Backend66 (Push to main)
+      if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.clean_deploy) }}
       env:
-        HF_TOKEN: ${{ inputs.hf_token || secrets.HF_TOKEN }}
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
         # Install huggingface_hub CLI
         pip install --upgrade huggingface_hub[cli]
         
         # Upload essential files only
-        echo "📋 Uploading essential files to Minatoz997/Backend66..."
+        echo "📋 Auto-uploading essential files to Minatoz997/Backend66..."
+        echo "🔄 Triggered by: ${{ github.event_name }}"
+        echo "📝 Commit: ${{ github.sha }}"
+        
         huggingface-cli upload Minatoz997/Backend66 app.py --repo-type=space
         huggingface-cli upload Minatoz997/Backend66 requirements.txt --repo-type=space
         huggingface-cli upload Minatoz997/Backend66 Dockerfile --repo-type=space
