@@ -1,93 +1,39 @@
-# OpenHands Backend - Optimized for Hugging Face Spaces
-# Minimal dependencies for stable deployment
+# FastAPI dan web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+aiofiles==23.2.1
 
-# ===== Core FastAPI and Server =====
-fastapi>=0.104.0,<0.115.0
-uvicorn[standard]>=0.24.0,<0.32.0
-python-multipart>=0.0.6
-python-dotenv>=1.0.0
-python-socketio==5.13.0
+# HTTP requests
+requests==2.31.0
+httpx==0.25.2
 
-# ===== LLM Provider (LiteLLM for OpenRouter) =====
-litellm>=1.60.0,<1.70.0
-aiohttp>=3.9.0,<3.12.0
-httpx>=0.25.0
+# Authentication dan security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+cryptography==41.0.7
 
-# ===== Core OpenHands Dependencies =====
-termcolor>=2.3.0
-toml>=0.10.2
-numpy>=1.24.0,<2.0.0
-json-repair>=0.25.0
-html2text>=2020.1.16
-pexpect>=4.8.0
-jinja2>=3.1.3,<4.0.0
-tenacity>=8.5,<10.0
-pathspec>=0.12.1
-pyjwt>=2.9.0
-dirhash>=0.2.1
-tornado>=6.3.0
-rapidfuzz>=3.9.0,<4.0.0
-whatthepatch>=1.0.6
-fastmcp==2.6.1
-boto3>=1.35.0,<2.0.0
-docker>=7.0.0,<8.0.0
+# Environment dan configuration
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
 
-# ===== System Utilities =====
-psutil>=5.9.0
-python-json-logger>=3.2.1
-prompt-toolkit>=3.0.50
+# Playwright untuk web automation (MAIN DEPENDENCY)
+playwright==1.40.0
 
-# ===== Content Processing =====
-python-frontmatter>=1.1.0
-PyPDF2>=3.0.0
-python-pptx>=0.6.21
-pylatexenc>=2.10
-python-docx>=1.1.0
-bashlex>=0.18
-Pillow>=10.0.0
+# Web scraping utilities
+beautifulsoup4==4.12.2
+lxml==4.9.3
+selenium==4.15.2
 
-# ===== File and Data Processing =====
-binaryornot>=0.4.4
-deprecated>=1.2.14
+# Async utilities
+asyncio-throttle==1.0.2
 
-# ===== HTTP and Network =====
-requests>=2.31.0
-urllib3>=2.0.0,<3.0.0
-charset-normalizer>=3.3.0
-certifi>=2023.7.22
-idna>=3.4
+# Logging dan monitoring
+structlog==23.2.0
 
-# ===== Security =====
-pydantic>=2.5.0,<3.0.0
-pydantic-settings>=2.1.0
+# Date dan time utilities
+python-dateutil==2.8.2
 
-# ===== Async Support =====
-anyio>=4.0.0,<5.0.0
-
-# ===== CORS Support =====
-starlette>=0.27.0
-
-# ===== Optional Browser Support (fallback safe) =====
-gymnasium>=0.29.0
-
-# ===== Fizzo Automation Support =====
-playwright>=1.40.0
-
-# ===== EXCLUDED FOR HF SPACES STABILITY =====
-# docker - Not available in HF Spaces
-# google-* - Heavy dependencies, not essential
-# redis - External service
-# e2b - External service  
-# browsergym-core - Heavy browser automation
-# boto3 - AWS dependencies not needed
-# opentelemetry-* - Monitoring not essential
-# pygithub - GitHub integration not essential
-# python-socketio - WebSocket not essential for basic API
-# sse-starlette - Server-sent events not essential
-# fastmcp - MCP support not essential
-# protobuf - Heavy dependency
-# anthropic - Use LiteLLM instead
-# openai - Use LiteLLM instead
-
-# NOTE: This minimal setup focuses on core functionality only
-# All AI agents still work with local runtime + OpenRouter
+# JSON utilities
+orjson==3.9.10
