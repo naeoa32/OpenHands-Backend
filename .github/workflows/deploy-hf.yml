@@ -8,11 +8,8 @@ on:
       - 'app.py'
       - 'requirements.txt'
       - 'Dockerfile'
-      - 'test_fizzo_endpoints.py'
-      - 'fizzo_automation.py'
-      - 'demo_fizzo_usage.py'
-      - 'openhands/**'
-      - 'microagents/**'
+      - 'README.md'
+      - 'start.sh'
       - '.github/workflows/deploy-hf.yml'
   
   # Manual trigger option
