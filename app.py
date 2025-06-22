@@ -581,31 +581,39 @@ def create_fallback_app():
                 logger.info(f"🔍 Fetching real novels from Fizzo.org for user: {email}")
                 
                 try:
-                    # Import FizzoAutomation class
+                    # Import FizzoAutomation class with timeout
+                    import asyncio
                     from fizzo_automation import FizzoAutomation
                     
-                    # Use FizzoAutomation to get real novels
-                    async with FizzoAutomation() as fizzo:
-                        novels = await fizzo.get_novel_list(email, password)
+                    # Use FizzoAutomation to get real novels with timeout
+                    async def fetch_with_timeout():
+                        async with FizzoAutomation() as fizzo:
+                            return await fizzo.get_novel_list(email, password)
+                    
+                    # Set 30 second timeout for Fizzo operations
+                    novels = await asyncio.wait_for(fetch_with_timeout(), timeout=30.0)
                         
-                        if novels:
-                            # Convert to expected format
-                            formatted_novels = []
-                            for novel in novels:
-                                formatted_novels.append({
-                                    "id": novel.get("id", "unknown"),
-                                    "title": novel.get("title", "Untitled"),
-                                    "description": novel.get("description", "No description available"),
-                                    "status": "ongoing",  # Default status
-                                    "chapters_count": novel.get("chapters_count", 0)
-                                })
+                    if novels:
+                        # Convert to expected format
+                        formatted_novels = []
+                        for novel in novels:
+                            formatted_novels.append({
+                                "id": novel.get("id", "unknown"),
+                                "title": novel.get("title", "Untitled"),
+                                "description": novel.get("description", "No description available"),
+                                "status": "ongoing",  # Default status
+                                "chapters_count": novel.get("chapters_count", 0)
+                            })
+                        
+                        logger.info(f"✅ Successfully fetched {len(formatted_novels)} real novels from Fizzo.org")
+                        return {"novels": formatted_novels}
+                    else:
+                        logger.warning("❌ No novels found on Fizzo.org")
+                        return {"novels": []}
                             
-                            logger.info(f"✅ Successfully fetched {len(formatted_novels)} real novels from Fizzo.org")
-                            return {"novels": formatted_novels}
-                        else:
-                            logger.warning("❌ No novels found on Fizzo.org")
-                            return {"novels": []}
-                            
+                except asyncio.TimeoutError:
+                    logger.error("❌ Timeout fetching novels from Fizzo.org (30s limit)")
+                    # Fallback to sample data if timeout
                 except Exception as e:
                     logger.error(f"❌ Error fetching novels from Fizzo.org: {e}")
                     # Fallback to sample data if real fetch fails
