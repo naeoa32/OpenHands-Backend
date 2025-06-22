@@ -60,13 +60,14 @@ def setup_hf_environment():
     logger.info("✅ Environment configured for Hugging Face Spaces")
 
 def install_playwright_browsers():
-    """Install Playwright browsers with robust error handling"""
+    """Install Playwright browsers with robust error handling for HF Spaces"""
     try:
-        logger.info("🎭 Installing Playwright browsers...")
+        logger.info("🎭 Installing Playwright browsers for Hugging Face Spaces...")
         
         # Create a custom browser path in /tmp to avoid permission issues
         browser_path = os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "/tmp/playwright_browsers")
         os.environ["PLAYWRIGHT_BROWSERS_PATH"] = browser_path
+        os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "0"
         
         # Create the directory if it doesn't exist
         Path(browser_path).mkdir(parents=True, exist_ok=True)
@@ -87,10 +88,22 @@ def install_playwright_browsers():
                 os.environ["HOME"] = old_home
             return True
         
-        # Try to install with --with-deps first (recommended)
+        # Install Playwright package first if not installed
+        try:
+            import playwright
+            logger.info("✅ Playwright package already installed")
+        except ImportError:
+            logger.info("📦 Installing Playwright package...")
+            import subprocess
+            subprocess.run([
+                sys.executable, "-m", "pip", "install", "playwright==1.40.0"
+            ], check=True, capture_output=True)
+            logger.info("✅ Playwright package installed")
+        
+        # Try to install browser with --with-deps first (recommended)
         try:
             import subprocess
-            logger.info("🔄 Attempting installation with --with-deps...")
+            logger.info("🔄 Attempting browser installation with --with-deps...")
             env = os.environ.copy()
             result = subprocess.run(
                 [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
