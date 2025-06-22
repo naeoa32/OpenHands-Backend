@@ -46,8 +46,6 @@ playwright==1.40.0
 ### **3. app.py** 
 (Yang sudah diupdate dari repository kamu)
 
-### **4. fizzo_automation.py**
-(File untuk scraping Fizzo.org)
 
 ## 🔧 **Langkah Deploy:**
 
@@ -70,7 +68,6 @@ playwright==1.40.0
 
 ```bash
 # Test endpoint
-curl -X POST https://minatoz997-backend66.hf.space/api/fizzo-list-novel \
   -H "Content-Type: application/json" \
   -d '{"email": "minatoz1997@gmail.com", "password": "Luthfi123*"}'
 ```
@@ -81,7 +78,6 @@ curl -X POST https://minatoz997-backend66.hf.space/api/fizzo-list-novel \
   "novels": [
     {
       "id": "real-novel-id-123",
-      "title": "Novel Asli dari Fizzo.org",
       "description": "...",
       "status": "ongoing"
     }
@@ -92,7 +88,6 @@ curl -X POST https://minatoz997-backend66.hf.space/api/fizzo-list-novel \
 ## 🎯 **Hasil Akhir:**
 
 - ✅ Playwright terinstall dengan system dependencies
-- ✅ Backend bisa scrape novel real dari Fizzo.org  
 - ✅ Frontend bisa pilih novel asli untuk upload
 - ✅ No more dummy data!
 

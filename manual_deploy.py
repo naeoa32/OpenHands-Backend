@@ -29,11 +29,8 @@ def verify_file_content():
         content = f.read()
     
     # Check for GET method
-    if '@app.get("/api/fizzo-list-novel")' in content:
-        print("✅ app.py contains correct GET method for fizzo-list-novel")
         return True
     else:
-        print("❌ app.py does NOT contain GET method for fizzo-list-novel")
         return False
 
 def main():
@@ -93,9 +90,6 @@ def main():
     additional_files = [
         "PERSONAL_TOKEN_GUIDE.md",
         "README_HF_DEPLOYMENT.md",
-        "test_fizzo_endpoints.py",
-        "fizzo_automation.py",
-        "demo_fizzo_usage.py"
     ]
     
     print("\n📤 Uploading additional files...")
@@ -132,7 +126,6 @@ def main():
     print("🔄 The space will automatically restart with the new files")
     
     print("\n📋 What was deployed:")
-    print("✅ app.py with GET method fix for /api/fizzo-list-novel")
     print("✅ All essential configuration files")
     print("✅ Supporting documentation and test files")
 
