@@ -1,5 +1,6 @@
 # Dockerfile lengkap untuk Hugging Face Spaces dengan Playwright
-FROM python:3.9
+# Python 3.11 required for FastMCP compatibility (>=3.10)
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1

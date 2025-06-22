@@ -28,7 +28,7 @@ dirhash>=0.2.1
 tornado>=6.3.0
 rapidfuzz>=3.9.0,<4.0.0
 whatthepatch>=1.0.6
-# fastmcp==2.6.1  # Removed - not needed for novel writing + Fizzo automation
+fastmcp>=2.6.0,<3.0.0
 boto3>=1.35.0,<2.0.0
 docker>=7.0.0,<8.0.0
 
