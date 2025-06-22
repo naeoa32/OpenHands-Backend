@@ -512,54 +512,132 @@ def create_fallback_app():
                 return user_db[email]
         return None
     
-    # Fizzo novels endpoint
+    # Fizzo novels endpoint - Support both GET and POST
     @app.get("/api/fizzo-list-novels")
     @app.get("/api/fizzo-list-novel")  # Add alias for backward compatibility
+    @app.post("/api/fizzo-list-novels")
+    @app.post("/api/fizzo-list-novel")  # Add POST support for credentials
     async def fizzo_list_novels(request: Request):
-        # Check if security is disabled for testing
-        disable_security = os.environ.get("DISABLE_SECURITY", "false").lower() == "true"
-        
-        # Get session token from header
-        session_token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        
-        # If security is disabled, return sample novels for testing
-        if disable_security:
-            logger.info("Security disabled, returning sample novels")
+        """
+        Get real novels from Fizzo.org using user credentials
+        Supports both authenticated and direct credential access
+        """
+        try:
+            # Check if security is disabled for testing
+            disable_security = os.environ.get("DISABLE_SECURITY", "false").lower() == "true"
+            
+            # Get session token from header
+            session_token = request.headers.get("Authorization", "").replace("Bearer ", "")
+            
+            # Try to get credentials from request body (for direct access)
+            email = None
+            password = None
+            
+            try:
+                if request.method == "POST":
+                    data = await request.json()
+                    email = data.get("email")
+                    password = data.get("password")
+            except:
+                pass
+            
+            # If security is disabled and no credentials provided, return sample novels for testing
+            if disable_security and not (email and password):
+                logger.info("Security disabled, returning sample novels")
+                return {
+                    "novels": [
+                        {
+                            "id": "sample-novel-1",
+                            "title": "Sample Novel 1",
+                            "description": "This is a sample novel for testing",
+                            "status": "ongoing",
+                            "chapters_count": 1
+                        },
+                        {
+                            "id": "sample-novel-2",
+                            "title": "Sample Novel 2",
+                            "description": "Another sample novel for testing",
+                            "status": "completed",
+                            "chapters_count": 2
+                        }
+                    ]
+                }
+            
+            # If credentials provided directly, use them to fetch real novels
+            if email and password:
+                logger.info(f"🔍 Fetching real novels from Fizzo.org for user: {email}")
+                
+                try:
+                    # Import FizzoAutomation class
+                    from fizzo_automation import FizzoAutomation
+                    
+                    # Use FizzoAutomation to get real novels
+                    async with FizzoAutomation() as fizzo:
+                        novels = await fizzo.get_novel_list(email, password)
+                        
+                        if novels:
+                            # Convert to expected format
+                            formatted_novels = []
+                            for novel in novels:
+                                formatted_novels.append({
+                                    "id": novel.get("id", "unknown"),
+                                    "title": novel.get("title", "Untitled"),
+                                    "description": novel.get("description", "No description available"),
+                                    "status": "ongoing",  # Default status
+                                    "chapters_count": novel.get("chapters_count", 0)
+                                })
+                            
+                            logger.info(f"✅ Successfully fetched {len(formatted_novels)} real novels from Fizzo.org")
+                            return {"novels": formatted_novels}
+                        else:
+                            logger.warning("❌ No novels found on Fizzo.org")
+                            return {"novels": []}
+                            
+                except Exception as e:
+                    logger.error(f"❌ Error fetching novels from Fizzo.org: {e}")
+                    # Fallback to sample data if real fetch fails
+                    return {
+                        "novels": [
+                            {
+                                "id": "error-fallback",
+                                "title": "Error: Could not fetch from Fizzo.org",
+                                "description": f"Error: {str(e)}",
+                                "status": "error",
+                                "chapters_count": 0
+                            }
+                        ]
+                    }
+            
+            # Legacy token-based authentication
+            if not session_token:
+                logger.warning("No session token or credentials provided for fizzo-list-novels")
+                return {"novels": []}
+            
+            # Get user data from token
+            user_data = get_user_from_token(session_token)
+            
+            # If user not found, return empty list
+            if not user_data:
+                logger.warning(f"Invalid session token: {session_token}")
+                return {"novels": []}
+            
+            # Return user's novels from database
+            logger.info(f"Returning {len(user_data['novels'])} novels for user {user_data['email']}")
+            return {"novels": user_data["novels"]}
+            
+        except Exception as e:
+            logger.error(f"❌ Error in fizzo_list_novels endpoint: {e}")
             return {
                 "novels": [
                     {
-                        "id": "sample-novel-1",
-                        "title": "Sample Novel 1",
-                        "description": "This is a sample novel for testing",
-                        "status": "ongoing",
-                        "chapters": [{"title": "Chapter 1", "content": "Sample content"}]
-                    },
-                    {
-                        "id": "sample-novel-2",
-                        "title": "Sample Novel 2",
-                        "description": "Another sample novel for testing",
-                        "status": "completed",
-                        "chapters": [{"title": "Chapter 1", "content": "Sample content"}]
+                        "id": "error",
+                        "title": "Error occurred",
+                        "description": f"Error: {str(e)}",
+                        "status": "error",
+                        "chapters_count": 0
                     }
                 ]
             }
-        
-        # If no token provided, return empty list
-        if not session_token:
-            logger.warning("No session token provided for fizzo-list-novels")
-            return {"novels": []}
-        
-        # Get user data from token
-        user_data = get_user_from_token(session_token)
-        
-        # If user not found, return empty list
-        if not user_data:
-            logger.warning(f"Invalid session token: {session_token}")
-            return {"novels": []}
-        
-        # Return user's novels
-        logger.info(f"Returning {len(user_data['novels'])} novels for user {user_data['email']}")
-        return {"novels": user_data["novels"]}
     
     # Fizzo novel detail endpoint
     @app.get("/api/fizzo-novel/{novel_id}")
