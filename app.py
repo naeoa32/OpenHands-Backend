@@ -22,13 +22,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 
-# Configure logging
+# Configure logging for HF Spaces (stdout only)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler('server.log')
+        logging.StreamHandler(sys.stdout)
     ]
 )
 logger = logging.getLogger(__name__)
@@ -1514,32 +1513,21 @@ app = get_app()
 
 if __name__ == "__main__":
     try:
-        # Set up temporary HOME directory for Playwright
-        temp_home = tempfile.mkdtemp(prefix="tmp_", suffix="_home")
-        os.environ["HOME"] = temp_home
-        logger.info(f"🏠 Using temporary HOME directory: {temp_home}")
-        
-        # Check if Playwright is installed
-        try:
-            from playwright.async_api import async_playwright
-            logger.info("✅ Playwright browser already installed")
-        except ImportError:
-            logger.warning("⚠️ Playwright not available, using HTTP-only mode")
-        
         logger.info("🚀 Starting Premium Human-Like Writing Assistant...")
         
         # Create the app
         app = create_fallback_app()
         logger.info("✅ Premium Writing Assistant API created successfully")
         
-        # Start server
+        # Start server with HF Spaces compatible settings
         logger.info("🌐 Starting server on 0.0.0.0:7860")
         uvicorn.run(
             app,
             host="0.0.0.0",
             port=7860,
             log_level="info",
-            access_log=True
+            access_log=False,  # Disable access log for HF Spaces
+            loop="asyncio"     # Use asyncio instead of uvloop for compatibility
         )
         
     except Exception as e:
