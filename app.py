@@ -60,13 +60,14 @@ def setup_hf_environment():
     logger.info("✅ Environment configured for Hugging Face Spaces")
 
 def install_playwright_browsers():
-    """Install Playwright browsers with robust error handling"""
+    """Install Playwright browsers with robust error handling for HF Spaces"""
     try:
-        logger.info("🎭 Installing Playwright browsers...")
+        logger.info("🎭 Installing Playwright browsers for Hugging Face Spaces...")
         
         # Create a custom browser path in /tmp to avoid permission issues
         browser_path = os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "/tmp/playwright_browsers")
         os.environ["PLAYWRIGHT_BROWSERS_PATH"] = browser_path
+        os.environ["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "0"
         
         # Create the directory if it doesn't exist
         Path(browser_path).mkdir(parents=True, exist_ok=True)
@@ -87,10 +88,22 @@ def install_playwright_browsers():
                 os.environ["HOME"] = old_home
             return True
         
-        # Try to install with --with-deps first (recommended)
+        # Install Playwright package first if not installed
+        try:
+            import playwright
+            logger.info("✅ Playwright package already installed")
+        except ImportError:
+            logger.info("📦 Installing Playwright package...")
+            import subprocess
+            subprocess.run([
+                sys.executable, "-m", "pip", "install", "playwright==1.40.0"
+            ], check=True, capture_output=True)
+            logger.info("✅ Playwright package installed")
+        
+        # Try to install browser with --with-deps first (recommended)
         try:
             import subprocess
-            logger.info("🔄 Attempting installation with --with-deps...")
+            logger.info("🔄 Attempting browser installation with --with-deps...")
             env = os.environ.copy()
             result = subprocess.run(
                 [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
@@ -1074,136 +1087,28 @@ def create_fallback_app():
     logger.info("✅ Fallback API created successfully")
     return app
 
-# Main application entry point
-if __name__ == "__main__":
+# Global app instance for ASGI server
+app = None
+
+def initialize_app():
+    """Initialize the FastAPI app"""
+    global app
     try:
         # Setup environment
         logger.info("🔄 Setting up Hugging Face environment...")
         setup_hf_environment()
+        install_playwright()
         
-        # Import FastAPI and other dependencies
+        # Try to create OpenHands app
         try:
-            import subprocess
-            from fastapi import FastAPI, Request, Response, HTTPException, Depends
-            from fastapi.middleware.cors import CORSMiddleware
-            from fastapi.responses import JSONResponse, StreamingResponse
-            logger.info("✅ FastAPI available")
-        except ImportError as e:
-            logger.error(f"❌ Error importing FastAPI: {e}")
-            sys.exit(1)
-
-        # Import uvicorn
-        try:
-            import uvicorn
-            logger.info("✅ Uvicorn available")
-        except ImportError as e:
-            logger.error(f"❌ Error importing uvicorn: {e}")
-            sys.exit(1)
-
-        # Check for LiteLLM
-        try:
-            import litellm
-            logger.info("✅ LiteLLM available")
-        except ImportError as e:
-            logger.warning(f"⚠️ LiteLLM not available: {e}")
-
-        # Check for Docker (not required)
-        try:
-            import docker
-            logger.info("⚠️ Docker available (not needed for HF Spaces)")
-        except ImportError:
-            logger.info("⚠️ Docker not available (PERFECTLY FINE)")
-
-        # Check for Google Cloud (not required)
-        try:
-            import google.cloud
-            logger.info("✅ Google Cloud available")
-        except ImportError:
-            logger.info("⚠️ Google Cloud not available (PERFECTLY FINE - no login/API key required)")
-
-        # Setup Fizzo automation
-        logger.info("🔄 Setting up Fizzo automation...")
-        
-        # Check for Playwright
-        try:
-            import playwright
-            logger.info("✅ Playwright available for Fizzo automation")
-            
-            # Install Playwright browsers
-            if install_playwright_browsers():
-                logger.info("✅ Playwright browsers installed successfully")
-            else:
-                logger.warning("⚠️ Could not auto-install Playwright browsers")
-                logger.info("🔄 Trying alternative installation methods...")
-                
-                # Create a custom browser path in /tmp to avoid permission issues
-                browser_path = os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "/tmp/playwright_browsers")
-                os.environ["PLAYWRIGHT_BROWSERS_PATH"] = browser_path
-                
-                # Create the directory if it doesn't exist
-                Path(browser_path).mkdir(parents=True, exist_ok=True)
-                
-                # Set HOME to a temporary directory to avoid .cache permission issues
-                temp_home = tempfile.mkdtemp()
-                old_home = os.environ.get("HOME")
-                os.environ["HOME"] = temp_home
-                
-                # Try direct download with curl (Linux only)
-                try:
-                    logger.info("🔄 Trying direct download with curl...")
-                    curl_cmd = f"curl -o /tmp/playwright-browsers.zip https://playwright.azureedge.net/builds/chromium/1169/chromium-linux.zip && mkdir -p {browser_path}/chromium-1169 && unzip -o /tmp/playwright-browsers.zip -d {browser_path}/chromium-1169 && chmod +x {browser_path}/chromium-1169/chrome-linux/chrome"
-                    result = subprocess.run(curl_cmd, shell=True, capture_output=True, text=True)
-                    
-                    if result.returncode == 0:
-                        logger.info("✅ Direct download successful")
-                    else:
-                        logger.warning(f"⚠️ Direct download failed: {result.stderr}")
-                except Exception as e:
-                    logger.warning(f"⚠️ Error during direct download: {e}")
-                
-                # Restore original HOME
-                if old_home:
-                    os.environ["HOME"] = old_home
-                
-        except ImportError:
-            logger.error("❌ Playwright not available for Fizzo automation")
-
-        # Import OpenHands app
-        logger.info("🔄 Importing OpenHands app...")
-        
-        # Try to import the app from openhands
-        try:
-            from openhands.app import create_app
+            logger.info("🔄 Creating OpenHands app...")
             app = create_app()
-            logger.info("✅ OpenHands app imported successfully")
             
-            # Add routes
-            from openhands.routes.simple_conversation import router as simple_conversation_router
-            app.include_router(simple_conversation_router)
-            logger.info("✅ Simple conversation routes included")
+            # Add Fizzo automation endpoints
+            from openhands.routes.fizzo_list import router as fizzo_list_router
+            app.include_router(fizzo_list_router)
+            logger.info("✅ Fizzo list endpoint added: /api/fizzo-list-novel")
             
-            from openhands.routes.test_chat import router as test_chat_router
-            app.include_router(test_chat_router)
-            logger.info("✅ Test chat routes included")
-            
-            from openhands.routes.openrouter import router as openrouter_router
-            app.include_router(openrouter_router)
-            logger.info("✅ OpenRouter test routes included")
-            
-            from openhands.routes.memory_conversation import router as memory_conversation_router
-            app.include_router(memory_conversation_router)
-            logger.info("✅ Memory conversation routes included")
-            
-            from openhands.routes.openrouter_chat import router as openrouter_chat_router
-            app.include_router(openrouter_chat_router)
-            logger.info("✅ OpenRouter chat routes included")
-            
-            from openhands.routes.novel_writing import router as novel_writing_router
-            app.include_router(novel_writing_router)
-            logger.info("✅ Novel writing routes included")
-            
-            # Create Fizzo automation endpoint
-            logger.info("🔄 Creating inline Fizzo automation...")
             from openhands.routes.fizzo_auto import router as fizzo_auto_router
             app.include_router(fizzo_auto_router)
             logger.info("✅ Fizzo automation endpoint added: /api/fizzo-auto-update")
@@ -1211,6 +1116,28 @@ if __name__ == "__main__":
         except Exception as e:
             logger.warning(f"⚠️ Error importing OpenHands app: {e}")
             logger.info("🔄 Creating fallback API...")
+            app = create_fallback_app()
+            
+    except Exception as e:
+        logger.error(f"❌ App initialization error: {e}")
+        # Create minimal fallback app
+        app = create_fallback_app()
+    
+    return app
+
+# Initialize app on import for ASGI server
+try:
+    app = initialize_app()
+except Exception as e:
+    logger.error(f"❌ Failed to initialize app: {e}")
+    app = create_fallback_app()
+
+# Main application entry point
+if __name__ == "__main__":
+    try:
+        # App already initialized above, just start server
+        if app is None:
+            logger.error("❌ App not initialized!")
             app = create_fallback_app()
         
         # Start uvicorn server
