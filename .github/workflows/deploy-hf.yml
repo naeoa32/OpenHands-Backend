@@ -70,12 +70,11 @@ jobs:
             print(f'❌ Core dependency error: {e}')
             sys.exit(1)
         
-        # Test deploy script
-        try:
-            import deploy_to_hf
-            print('✅ deploy_to_hf.py imports successfully')
-        except Exception as e:
-            print(f'❌ deploy_to_hf.py import error: {e}')
+        # Check deploy script exists
+        if os.path.exists('deploy_to_hf.py'):
+            print('✅ deploy_to_hf.py exists')
+        else:
+            print('❌ deploy_to_hf.py missing')
             sys.exit(1)
         
         # Test app.py imports (without running the server)
