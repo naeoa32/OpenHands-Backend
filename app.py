@@ -616,38 +616,43 @@ def main():
     if not install_success:
         logger.warning("⚠️ Playwright installation failed, browser features may not work")
     
-    try:
-        # Try to import and start the main OpenHands server
-        logger.info("🚀 Attempting to start main OpenHands server...")
-        
-        # Import OpenHands server components
-        from openhands.server.listen import main as openhands_main
-        
-        # Start the main server
-        openhands_main()
-        
-    except Exception as e:
-        logger.error(f"❌ Failed to start main OpenHands server: {e}")
-        logger.info("🔄 Starting fallback server...")
-        
-        # Create and start fallback app
-        global app
+    # For Hugging Face Spaces, use fallback server directly
+    # This avoids complex OpenHands server setup issues
+    logger.info("🚀 Starting optimized server for Hugging Face Spaces...")
+    
+    # Create and start fallback app
+    global app
+    app = create_fallback_app()
+    
+    # Get port from environment
+    port = int(os.environ.get("PORT", 7860))
+    host = os.environ.get("HOST", "0.0.0.0")
+    
+    logger.info(f"🌐 Starting server on {host}:{port}")
+    
+    # Start the server
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="info",
+        access_log=True
+    )
+
+# Create app instance for Hugging Face Spaces
+# HF Spaces needs this to be available at module level
+app = None
+
+def get_app():
+    """Get or create the FastAPI app instance"""
+    global app
+    if app is None:
+        setup_hf_environment()
         app = create_fallback_app()
-        
-        # Get port from environment
-        port = int(os.environ.get("PORT", 7860))
-        host = os.environ.get("HOST", "0.0.0.0")
-        
-        logger.info(f"🌐 Starting fallback server on {host}:{port}")
-        
-        # Start the server
-        uvicorn.run(
-            app,
-            host=host,
-            port=port,
-            log_level="info",
-            access_log=True
-        )
+    return app
+
+# For Hugging Face Spaces compatibility
+app = get_app()
 
 if __name__ == "__main__":
     main()
