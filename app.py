@@ -1098,6 +1098,53 @@ def create_fallback_app():
 # Global app instance for ASGI server
 app = None
 
+def add_fizzo_endpoints(target_app):
+    """Add Fizzo endpoints to existing FastAPI app"""
+    try:
+        # Import required types
+        from fastapi import Request
+        
+        # Add all our Fizzo endpoints to the target app
+        logger.info("🔄 Adding Fizzo endpoints to OpenHands app...")
+        
+        # Re-define endpoints on the target app
+        @target_app.post("/api/fizzo-login")
+        async def fizzo_login_endpoint(request: Request):
+            return await fizzo_login(request)
+            
+        @target_app.get("/api/fizzo-list-novel")
+        @target_app.post("/api/fizzo-list-novel")
+        async def fizzo_list_novels_endpoint(request: Request):
+            return await fizzo_list_novels(request)
+            
+        @target_app.post("/api/fizzo-create-novel")
+        async def fizzo_create_novel_endpoint(request: Request):
+            return await fizzo_create_novel(request)
+            
+        @target_app.post("/api/fizzo-add-chapter")
+        async def fizzo_add_chapter_endpoint(request: Request):
+            return await fizzo_add_chapter(request)
+            
+        @target_app.post("/api/fizzo-auto-update")
+        async def fizzo_auto_update_endpoint(request: Request):
+            return await fizzo_auto_update(request)
+            
+        @target_app.post("/api/fizzo-direct-upload")
+        async def fizzo_direct_upload_endpoint(request: Request):
+            return await fizzo_direct_upload(request)
+        
+        logger.info("✅ Fizzo endpoints added successfully")
+        logger.info("📋 Available Fizzo endpoints:")
+        logger.info("   - POST /api/fizzo-login")
+        logger.info("   - GET/POST /api/fizzo-list-novel") 
+        logger.info("   - POST /api/fizzo-create-novel")
+        logger.info("   - POST /api/fizzo-add-chapter")
+        logger.info("   - POST /api/fizzo-auto-update")
+        logger.info("   - POST /api/fizzo-direct-upload")
+        
+    except Exception as e:
+        logger.error(f"❌ Error adding Fizzo endpoints: {e}")
+
 def initialize_app():
     """Initialize the FastAPI app"""
     global app
@@ -1105,21 +1152,21 @@ def initialize_app():
         # Setup environment
         logger.info("🔄 Setting up Hugging Face environment...")
         setup_hf_environment()
-        install_playwright()
+        install_playwright_browsers()
         
-        # Try to create OpenHands app
+        # Try to import OpenHands app
         try:
-            logger.info("🔄 Creating OpenHands app...")
-            app = create_app()
+            logger.info("🔄 Importing OpenHands app...")
+            from openhands.server.app import app as openhands_app
             
-            # Add Fizzo automation endpoints
-            from openhands.routes.fizzo_list import router as fizzo_list_router
-            app.include_router(fizzo_list_router)
-            logger.info("✅ Fizzo list endpoint added: /api/fizzo-list-novel")
+            # Use OpenHands app and add our Fizzo endpoints
+            app = openhands_app
             
-            from openhands.routes.fizzo_auto import router as fizzo_auto_router
-            app.include_router(fizzo_auto_router)
-            logger.info("✅ Fizzo automation endpoint added: /api/fizzo-auto-update")
+            # Add our custom Fizzo endpoints to OpenHands app
+            add_fizzo_endpoints(app)
+            
+            logger.info("✅ OpenHands app imported successfully with Fizzo integration")
+            logger.info("✅ Chat endpoints available: /test-chat, /api/simple/conversation, /chat/message")
             
         except Exception as e:
             logger.warning(f"⚠️ Error importing OpenHands app: {e}")
