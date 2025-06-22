@@ -40,6 +40,7 @@ jobs:
         
     - name: 📦 Install dependencies
       run: |
+        pip install --upgrade pip
         pip install huggingface_hub
         # Install minimal dependencies to avoid import errors during deployment
         pip install fastapi uvicorn python-multipart python-dotenv
@@ -49,6 +50,11 @@ jobs:
     - name: 🔍 Pre-deployment validation
       run: |
         echo "🔍 Checking for import issues..."
+        echo "📁 Current directory: $(pwd)"
+        echo "📋 Files in directory:"
+        ls -la
+        echo ""
+        echo "🐍 Testing Python imports..."
         python -c "
         import sys
         import os
@@ -58,9 +64,18 @@ jobs:
             import fastapi
             import uvicorn
             import litellm
+            import huggingface_hub
             print('✅ Core dependencies OK')
         except ImportError as e:
             print(f'❌ Core dependency error: {e}')
+            sys.exit(1)
+        
+        # Test deploy script
+        try:
+            import deploy_to_hf
+            print('✅ deploy_to_hf.py imports successfully')
+        except Exception as e:
+            print(f'❌ deploy_to_hf.py import error: {e}')
             sys.exit(1)
         
         # Test app.py imports (without running the server)
