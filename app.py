@@ -500,6 +500,7 @@ def create_fallback_app():
                 "conversations": "/api/conversations",
                 "simple_conversation": "/api/simple/conversation",
                 "test-chat": "/api/test-chat",
+                "chat_message": "/chat/message",
                 "fizzo_login": "/api/fizzo-login",
                 "fizzo_list_novels": "/api/fizzo-list-novels",
                 "fizzo_list_novel": "/api/fizzo-list-novel",  # Add alias for backward compatibility
@@ -516,18 +517,7 @@ def create_fallback_app():
     async def health_check():
         return {"status": "ok"}
     
-    # Simple conversation endpoint
-    @app.post("/api/simple/conversation")
-    async def simple_conversation(request: Request):
-        data = await request.json()
-        message = data.get("message", "")
-        
-        # Simple echo response
-        return {
-            "response": f"Echo: {message}",
-            "conversation_id": "test-conversation",
-            "message_id": "test-message"
-        }
+
     
     # Test chat endpoint
     @app.post("/api/test-chat")
@@ -541,6 +531,85 @@ def create_fallback_app():
             "conversation_id": "test-conversation",
             "message_id": "test-message"
         }
+    
+    # Chat endpoints for Fizzo integration
+    @app.post("/chat/message")
+    async def chat_message(request: Request):
+        """Handle chat messages with Fizzo integration"""
+        try:
+            data = await request.json()
+            message = data.get("message", "")
+            conversation_id = data.get("conversation_id", "default")
+            
+            # Basic response for now
+            response = {
+                "status": "success",
+                "message": f"Received: {message}",
+                "conversation_id": conversation_id,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            return response
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Chat error: {str(e)}"
+            }
+    
+    @app.get("/chat/message")
+    async def get_chat_messages(request: Request):
+        """Get chat messages"""
+        return {
+            "status": "success",
+            "messages": [],
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    @app.post("/api/conversations")
+    async def create_conversation(request: Request):
+        """Create new conversation"""
+        try:
+            data = await request.json()
+            conversation_id = f"conv_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            
+            return {
+                "status": "success",
+                "conversation_id": conversation_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error creating conversation: {str(e)}"
+            }
+    
+    @app.get("/api/conversations")
+    async def get_conversations(request: Request):
+        """Get all conversations"""
+        return {
+            "status": "success",
+            "conversations": [],
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    @app.post("/api/simple/conversation")
+    async def simple_conversation(request: Request):
+        """Simple conversation endpoint"""
+        try:
+            data = await request.json()
+            message = data.get("message", "")
+            
+            return {
+                "status": "success",
+                "response": f"Simple response to: {message}",
+                "timestamp": datetime.now().isoformat()
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error in simple conversation: {str(e)}"
+            }
     
     # Models options endpoint
     @app.get("/api/options/models")
