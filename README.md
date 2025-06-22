@@ -1,6 +1,6 @@
 ---
-title: Personal OpenHands Backend
-emoji: 💕
+title: Human-Like Writing Assistant
+emoji: 🎭
 colorFrom: blue
 colorTo: purple
 sdk: docker
@@ -11,19 +11,21 @@ license: mit
 app_port: 7860
 ---
 
-# 💕 Personal OpenHands Backend
+# 🎭 Human-Like Writing Assistant
 
-A powerful AI agent backend made for you and your girlfriend! OpenRouter-only, no Google Cloud, simple authentication, and optimized for Hugging Face Spaces.
+A premium AI writing assistant that creates content indistinguishable from human writing. Revolutionary technology that analyzes writing patterns and generates authentic content.
 
-## 🚀 Quick Start
+## 🚀 Features
 
-This Space provides a personal AI assistant backend for you and your girlfriend only! Simple authentication protects your privacy.
+- **Advanced Writing Style Analysis** - Analyze and learn from writing samples
+- **Human-Like Content Generation** - Generate content that matches your style
+- **AI Text Humanization** - Convert AI-generated text to appear human-written
+- **AI Detection Risk Assessment** - Check and improve content to avoid AI detection
+- **Anti-Detection Technology** - Advanced techniques to ensure authenticity
 
-### 🔐 Authentication Required
+## 🔐 Authentication
 
-Most endpoints require a Bearer token for security. You need to set a `PERSONAL_ACCESS_TOKEN` in your HF Spaces environment variables.
-
-**What is Personal Access Token?** It's like a simple password to protect your AI backend so only you and your girlfriend can use it!
+Most endpoints require a Bearer token for security. Set a `PERSONAL_ACCESS_TOKEN` in your HF Spaces environment variables.
 
 ### 📋 Required Setup
 
@@ -33,123 +35,105 @@ Set these environment variables in your HF Spaces settings:
 # Required - Your OpenRouter API key
 LLM_API_KEY=your_openrouter_api_key
 
-# Required - Your personal password/token (choose any password you like!)
+# Required - Your personal access token (choose any password you like!)
 PERSONAL_ACCESS_TOKEN=your_chosen_password_here
 
 # Optional - LLM configuration (defaults provided)
 LLM_MODEL=openrouter/anthropic/claude-3-haiku-20240307
 LLM_BASE_URL=https://openrouter.ai/api/v1
-```
+## 🌐 API Endpoints
 
-### 🔑 How to Create Personal Access Token
-
-**Simple & Easy:** Just choose any password you like!
-
+### Public Endpoints (No Authentication)
 ```bash
-# Examples (choose one or create your own):
-PERSONAL_ACCESS_TOKEN=backend-for-us-2024
-PERSONAL_ACCESS_TOKEN=love-you-babe-123
-PERSONAL_ACCESS_TOKEN=our-private-ai-key
-PERSONAL_ACCESS_TOKEN=ai-assistant-secret
-```
-
-**Where to set it:**
-1. Go to your HF Space settings
-2. Add environment variable: `PERSONAL_ACCESS_TOKEN`
-3. Set the value to your chosen password
-4. Save and restart your space
-
-### 🌐 API Endpoints
-
-```bash
-# Health check (public - no token needed)
+# Health check
 GET /health
 
-# Personal info (protected - token needed)
-GET /personal-info
-Authorization: Bearer your_chosen_password
+# Root information
+GET /
+```
 
-# OpenHands API endpoints (protected - token needed)
-GET /api/options/config
-Authorization: Bearer your_chosen_password
-
-# Create conversation (protected - token needed)
-POST /api/conversations
-Authorization: Bearer your_chosen_password
+### Protected Endpoints (Require Bearer Token)
+```bash
+# Analyze writing style
+POST /api/analyze-writing-style
+Authorization: Bearer your_personal_token
 Content-Type: application/json
 {
-  "initial_user_msg": "Hello! Can you help me with coding?"
+  "text_samples": ["Sample text 1", "Sample text 2"]
 }
 
-# 🚀 NEW: Fizzo.org Auto-Update (public)
-POST /api/fizzo-auto-update
+# Generate human-like content
+POST /api/generate-human-content
+Authorization: Bearer your_personal_token
 Content-Type: application/json
 {
-  "email": "your_email@gmail.com",
-  "password": "your_password",
-  "chapter_title": "Bab 28: Judul Chapter",
-  "chapter_content": "Isi chapter novel minimal 1000 karakter..."
+  "prompt": "Write about...",
+  "style_profile": {...},
+  "length": 500
+}
+
+# Humanize AI text
+POST /api/humanize-text
+Authorization: Bearer your_personal_token
+Content-Type: application/json
+{
+  "ai_text": "AI generated text...",
+  "style_profile": {...}
+}
+
+# Check AI detection risk
+POST /api/check-ai-detection
+Authorization: Bearer your_personal_token
+Content-Type: application/json
+{
+  "text": "Text to analyze..."
 }
 ```
 
 ### 💻 Example Usage
 
 ```javascript
-// Create a new conversation with authentication
-const API_TOKEN = 'backend-for-us-2024'; // Your chosen password
+// Analyze writing style
+const API_TOKEN = 'your_chosen_password';
 
-const response = await fetch('https://your-space.hf.space/api/conversations', {
+const response = await fetch('https://your-space.hf.space/api/analyze-writing-style', {
   method: 'POST',
   headers: { 
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${API_TOKEN}`
   },
   body: JSON.stringify({
-    initial_user_msg: 'Write a Python function to calculate fibonacci numbers'
+    text_samples: [
+      "This is my first writing sample. I tend to write in a casual, friendly tone.",
+      "Here's another example of my writing style. I like to use simple words and short sentences."
+    ]
   })
 });
 
-const conversation = await response.json();
-console.log(conversation);
+const analysis = await response.json();
+console.log(analysis);
 ```
 
 ### 🧪 Test Your Setup
 
 ```bash
-# Test without token (should work)
+# Test health check (should work)
 curl https://your-space.hf.space/health
 
 # Test with token (should work)
 curl -H "Authorization: Bearer your_chosen_password" \
-     https://your-space.hf.space/personal-info
-
-# Test without token on protected endpoint (should fail)
-curl https://your-space.hf.space/personal-info
+     -H "Content-Type: application/json" \
+     -d '{"text":"Test text for AI detection"}' \
+     https://your-space.hf.space/api/check-ai-detection
 ```
-
-## 🤖 Available AI Agents
-
-Your backend includes 5 powerful AI agents:
-
-1. **CodeActAgent** ⭐ (Default) - Complete coding assistant
-2. **BrowsingAgent** 🌐 - Web research and automation
-3. **ReadOnlyAgent** 📖 - Safe code review and analysis
-4. **LocAgent** 🎯 - Targeted code generation
-5. **VisualBrowsingAgent** 👁️ - Visual web interaction (limited in HF Spaces)
-
-## 🌐 Frontend Integration
-
-This backend works perfectly with frontends deployed on:
-- **Vercel** (*.vercel.app)
-- **Netlify** (*.netlify.app) 
-- **GitHub Pages** (*.github.io)
-- **Local development** (localhost)
-
-CORS is pre-configured to allow these domains.
 
 ## 🔧 Features
 
-- 🔐 **Personal Authentication** - Only you and your girlfriend can access
+- 🎭 **Advanced Writing Analysis** - Deep analysis of writing patterns
+- 🤖 **Human-Like Generation** - Content that passes AI detection
+- 🔄 **Text Humanization** - Convert AI text to human-like
+- 🔍 **Detection Risk Assessment** - Check and improve authenticity
+- 🔐 **Secure Authentication** - Protected with personal tokens
 - ✅ **OpenRouter Only** - No need for multiple API keys
 - ✅ **Local Runtime** - Works without Docker in container
 - ✅ **CORS Enabled** - Ready for frontend integration
@@ -157,7 +141,6 @@ CORS is pre-configured to allow these domains.
 - ✅ **HF Spaces Optimized** - Perfect for Hugging Face deployment
 - ✅ **Indonesian Novel Writing** - Special support for creative writing
 - ✅ **All-in-One File** - Single app.py file, no confusion
-- 🚀 **NEW: Fizzo.org Auto-Update** - Automated novel chapter publishing
 
 ## 🎯 Use Cases
 
@@ -167,7 +150,6 @@ CORS is pre-configured to allow these domains.
 - **Research Assistant**: Gather information from multiple sources
 - **Educational Tools**: Interactive learning experiences
 - **Novel Writing**: Indonesian creative writing support
-- 🚀 **Novel Publishing**: Auto-update chapters to fizzo.org platform
 
 ## 🔒 Security & Privacy
 
@@ -195,10 +177,10 @@ CORS is pre-configured to allow these domains.
 2. Set `LLM_API_KEY` in HF Spaces environment variables
 3. Restart your HF Space
 
-### Agent not working:
-1. Check if your OpenRouter API key has credits
-2. Try a different model (set `LLM_MODEL` environment variable)
-3. Check the logs in HF Spaces
+### "Authentication failed" error:
+1. Make sure you set `PERSONAL_ACCESS_TOKEN` in environment variables
+2. Use the correct token in Authorization header: `Bearer your_token`
+3. Check that the token matches exactly
 
 ## 📝 License
 
@@ -206,6 +188,6 @@ MIT License - Feel free to use in your projects!
 
 ---
 
-**Ready to build AI-powered applications?** 🚀 
+**Ready to create human-like content?** 🎭
 
-Start by setting up your environment variables and calling the API endpoints above!# Auto deploy test - Sat Jun 21 22:57:03 UTC 2025
+Start by setting up your environment variables and calling the API endpoints above!
