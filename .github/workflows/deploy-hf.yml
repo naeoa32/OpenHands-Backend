@@ -57,10 +57,7 @@ jobs:
         echo "🐍 Testing core imports..."
         python -c "import fastapi, uvicorn, litellm, huggingface_hub; print('✅ All dependencies OK')"
         echo "📄 Checking essential files..."
-        test -f app.py && echo "✅ app.py exists" || (echo "❌ app.py missing" && exit 1)
-        test -f deploy_to_hf.py && echo "✅ deploy_to_hf.py exists" || (echo "❌ deploy_to_hf.py missing" && exit 1)
-        test -f requirements.txt && echo "✅ requirements.txt exists" || (echo "❌ requirements.txt missing" && exit 1)
-        test -f Dockerfile && echo "✅ Dockerfile exists" || (echo "❌ Dockerfile missing" && exit 1)
+        ls -la app.py deploy_to_hf.py requirements.txt Dockerfile
         echo "🎯 Pre-deployment validation complete"
         
     - name: 🧹 Clean deploy to Minatoz997/Backend66 (Manual)
