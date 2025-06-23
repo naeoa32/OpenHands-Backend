@@ -1,0 +1,30 @@
+name: 🚀 Deploy to Minatoz997/Backend66
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: 📦 Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install huggingface_hub
+        
+    - name: 🚀 Deploy to HF Spaces
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: |
+        python deploy_to_hf.py --space-name "Minatoz997/Backend66"
