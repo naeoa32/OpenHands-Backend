@@ -1,4 +1,4 @@
-name: 🚀 Deploy to Minatoz997/Backend66
+name: 🚀 Deploy to HF Spaces
 
 on:
   push:
@@ -10,21 +10,36 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: 📥 Checkout repository
+    - name: 📥 Checkout
       uses: actions/checkout@v4
       
-    - name: 🐍 Set up Python
+    - name: 🐍 Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
         
-    - name: 📦 Install dependencies
-      run: |
-        pip install --upgrade pip
-        pip install huggingface_hub
+    - name: 📦 Install HF Hub
+      run: pip install huggingface_hub
         
-    - name: 🚀 Deploy to HF Spaces
+    - name: 🚀 Deploy to Minatoz997/Backend66
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        python deploy_to_hf.py --space-name "Minatoz997/Backend66"
+        python -c "
+        from huggingface_hub import HfApi
+        api = HfApi()
+        
+        files = ['app.py', 'requirements.txt', 'Dockerfile', 'README.md']
+        
+        for f in files:
+            try:
+                api.upload_file(f, f, 'Minatoz997/Backend66', repo_type='space')
+                print(f'✅ {f} uploaded')
+            except Exception as e:
+                print(f'❌ {f} failed: {e}')
+        
+        print('🎉 Deploy complete!')
+        "
+        
+    - name: ✅ Success
+      run: echo "🎉 Deployed to https://huggingface.co/spaces/Minatoz997/Backend66"
