@@ -49,52 +49,19 @@ jobs:
         
     - name: 🔍 Pre-deployment validation
       run: |
-        echo "🔍 Checking for import issues..."
+        echo "🔍 Checking files and dependencies..."
         echo "📁 Current directory: $(pwd)"
         echo "📋 Files in directory:"
         ls -la
         echo ""
-        echo "🐍 Testing Python imports..."
-        python -c "
-        import sys
-        import os
-        
-        # Test critical imports
-        try:
-            import fastapi
-            import uvicorn
-            import litellm
-            import huggingface_hub
-            print('✅ Core dependencies OK')
-        except ImportError as e:
-            print(f'❌ Core dependency error: {e}')
-            sys.exit(1)
-        
-        # Check deploy script exists
-        if os.path.exists('deploy_to_hf.py'):
-            print('✅ deploy_to_hf.py exists')
-        else:
-            print('❌ deploy_to_hf.py missing')
-            sys.exit(1)
-        
-        # Test app.py imports (without running the server)
-        try:
-            # Add current directory to path
-            sys.path.insert(0, '.')
-            
-            # Set minimal environment to avoid startup issues
-            os.environ['DISABLE_SECURITY'] = 'true'
-            os.environ['SETTINGS_STORE_TYPE'] = 'memory'
-            
-            # Test import without running
-            import app
-            print('✅ app.py imports successfully')
-        except Exception as e:
-            print(f'⚠️  app.py import warning: {e}')
-            # Don't fail deployment for warnings
-        
-        print('🎯 Pre-deployment validation complete')
-        "
+        echo "🐍 Testing core imports..."
+        python -c "import fastapi, uvicorn, litellm, huggingface_hub; print('✅ All dependencies OK')"
+        echo "📄 Checking essential files..."
+        test -f app.py && echo "✅ app.py exists" || (echo "❌ app.py missing" && exit 1)
+        test -f deploy_to_hf.py && echo "✅ deploy_to_hf.py exists" || (echo "❌ deploy_to_hf.py missing" && exit 1)
+        test -f requirements.txt && echo "✅ requirements.txt exists" || (echo "❌ requirements.txt missing" && exit 1)
+        test -f Dockerfile && echo "✅ Dockerfile exists" || (echo "❌ Dockerfile missing" && exit 1)
+        echo "🎯 Pre-deployment validation complete"
         
     - name: 🧹 Clean deploy to Minatoz997/Backend66 (Manual)
       if: ${{ github.event_name == 'workflow_dispatch' && inputs.clean_deploy }}
